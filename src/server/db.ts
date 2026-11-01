@@ -4,6 +4,7 @@ import type {ClaimStatus, NetworkId} from '../config/gratis.ts';
 import type {InvitationData} from '../domain/invitation.ts';
 import type {SiteSettings} from '../config/site.ts';
 import type {CompiledSpec} from '../templates/compiled-types.ts';
+import type {UsageSnapshot} from './usage.ts';
 
 // Persistencia del servidor: un archivo JSON (.data/db.json) y una carpeta de
 // medios (.data/media). Simple y gratuito; requiere un DISCO PERSISTENTE (VPS,
@@ -85,9 +86,11 @@ type DbShape = {
 	compiled: Record<string, CompiledSpec>;
 	media: Record<string, MediaMeta>;
 	claims: Record<string, ClaimRecord>;
+	/** registro diario del uso de espacio (clave AAAA-MM-DD) */
+	usage: Record<string, UsageSnapshot>;
 };
 
-const empty = (): DbShape => ({version: 1, settings: null, purchases: {}, events: {}, webhookEvents: {}, compiled: {}, media: {}, claims: {}});
+const empty = (): DbShape => ({version: 1, settings: null, purchases: {}, events: {}, webhookEvents: {}, compiled: {}, media: {}, claims: {}, usage: {}});
 
 export class Db {
 	private data: DbShape = empty();

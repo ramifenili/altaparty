@@ -31,7 +31,7 @@ export type Stats = {
 	activeWithData: number;
 };
 
-const dayKey = (ms: number) => new Date(ms - 3 * 3600e3).toISOString().slice(0, 10); // hora de Argentina
+export const dayKey = (ms: number) => new Date(ms - 3 * 3600e3).toISOString().slice(0, 10); // hora de Argentina
 
 export function buildStats(events: Record<string, Record<string, number>>, purchases: PurchaseRecord[], days: number, now: number): Stats {
 	const from = dayKey(now - (days - 1) * 86400e3);

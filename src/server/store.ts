@@ -3,6 +3,7 @@ import {DEFAULT_SETTINGS, normalizeSettings, type SiteSettings} from '../config/
 import {normalizeSpec, type CompiledSpec} from '../templates/compiled-types.ts';
 import {PgStore} from './pg-store.ts';
 import {MEDIA_HEADERS, type ServedMedia} from './media-serve.ts';
+import type {UsageNow, UsageSnapshot} from './usage.ts';
 
 // Acceso a los datos. La FUENTE DE VERDAD del pago sigue siendo la API de
 // Mercado Pago; acá se guarda la compra (qué se compró, límites, vencimiento),
@@ -229,6 +230,38 @@ export class DbStore implements PurchaseStore {
 		if (start > end || start >= buf.length) return {status: 416, headers: {'Content-Range': `bytes */${buf.length}`}, body: null};
 		const part = buf.subarray(start, end + 1);
 		return {status: 206, headers: {...headers, 'Content-Range': `bytes ${start}-${end}/${buf.length}`, 'Content-Length': String(part.length)}, body: new Uint8Array(part)};
+	}
+
+	// ---- uso de espacio (panel del admin) ----
+	measureUsage(): Promise<UsageNow> {
+		return this.db.tx(
+			(d) => {
+				const tables = Object.entries(d).filter(([, v]) => typeof v === 'object' && v !== null).map(([name, v]) => ({name, bytes: JSON.stringify(v).length}));
+				const photoBytes = Object.values(d.purchases).reduce((n, r) => n + (r.hasPhoto ? (this.db.fileSize(photoName(r.id)) ?? 0) : 0), 0);
+				return {
+					dbBytes: tables.reduce((n, t) => n + t.bytes, 0),
+					blobBytes: Object.values(d.media).reduce((n, m) => n + m.bytes, 0),
+					photoBytes,
+					purchases: Object.keys(d.purchases).length,
+					media: Object.keys(d.media).length,
+					tables,
+				};
+			},
+			{readOnly: true}
+		);
+	}
+
+	/** Guarda (o reemplaza) el registro de uso de ese día. */
+	recordUsage(day: string, u: UsageNow): Promise<void> {
+		return this.db.tx((d) => {
+			d.usage ??= {};
+			d.usage[day] = {day, dbBytes: u.dbBytes, blobBytes: u.blobBytes, photoBytes: u.photoBytes, purchases: u.purchases, media: u.media};
+			for (const old of Object.keys(d.usage).sort().slice(0, -400)) delete d.usage[old];
+		});
+	}
+
+	readUsage(): Promise<UsageSnapshot[]> {
+		return this.db.tx((d) => Object.values(d.usage ?? {}).sort((a, b) => a.day.localeCompare(b.day)), {readOnly: true});
 	}
 
 	// ---- analítica propia (solo contadores, sin datos personales) ----

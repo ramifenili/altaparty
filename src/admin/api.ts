@@ -1,6 +1,7 @@
 import type {SiteSettings} from '../config/site';
 import type {CompiledSpec} from '../templates/compiled-types';
 import type {Stats} from '../server/stats';
+import type {UsageReport} from '../server/usage';
 import type {ClaimRecord, MediaMeta} from '../server/db';
 
 export class AdminApiError extends Error {
@@ -28,6 +29,7 @@ export const adminApi = {
 	listClaims: () => call<ClaimRecord[]>('/api/admin/claims'),
 	decideClaim: (id: string, action: 'approve' | 'reject', note?: string) => call<ClaimRecord>(`/api/admin/claims/${id}`, {method: 'POST', body: JSON.stringify({action, note})}),
 	stats: (days: number) => call<Stats>(`/api/admin/stats?days=${days}`),
+	usage: () => call<UsageReport>('/api/admin/usage'),
 	getSettings: () => call<SiteSettings>('/api/admin/settings'),
 	saveSettings: (s: SiteSettings) => call<SiteSettings>('/api/admin/settings', {method: 'PUT', body: JSON.stringify(s)}),
 	listCompiled: () => call<CompiledSpec[]>('/api/admin/compiled'),

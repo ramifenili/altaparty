@@ -4,6 +4,7 @@ import type {ClaimRecord, MediaMeta, PurchaseRecord} from './db.ts';
 import {DEFAULT_SETTINGS, normalizeSettings, type SiteSettings} from '../config/site.ts';
 import {normalizeSpec, type CompiledSpec} from '../templates/compiled-types.ts';
 import {MEDIA_HEADERS, type ServedMedia} from './media-serve.ts';
+import type {UsageNow, UsageSnapshot} from './usage.ts';
 
 // Persistencia para hosting sin disco (Vercel): Postgres para los datos y las fotos de las
 // compras (JPEG chico, se borra al vencer) y Vercel Blob privado para los medios del admin.
@@ -38,6 +39,14 @@ CREATE TABLE IF NOT EXISTS compiled (id text PRIMARY KEY, created_at bigint NOT 
 CREATE TABLE IF NOT EXISTS media (id text PRIMARY KEY, created_at bigint NOT NULL, pathname text NOT NULL, meta jsonb NOT NULL);
 CREATE TABLE IF NOT EXISTS webhook_events (key text PRIMARY KEY, at bigint NOT NULL);
 CREATE TABLE IF NOT EXISTS events (day text NOT NULL, name text NOT NULL, n bigint NOT NULL, PRIMARY KEY (day, name));
+CREATE TABLE IF NOT EXISTS usage_daily (
+	day text PRIMARY KEY,
+	db_bytes bigint NOT NULL,
+	blob_bytes bigint NOT NULL,
+	photo_bytes bigint NOT NULL,
+	purchases integer NOT NULL,
+	media integer NOT NULL
+);
 `;
 
 export class PgStore {
@@ -289,6 +298,45 @@ export class PgStore {
 		if (contentRange) headers['Content-Range'] = contentRange;
 		headers['Content-Length'] = length ?? String(blob.blob.size);
 		return {status: contentRange ? 206 : 200, headers, body: blob.stream};
+	}
+
+	// ---- uso de espacio (panel del admin) ----
+	async measureUsage(): Promise<UsageNow> {
+		const [db, tables, photos, media, purchases] = await Promise.all([
+			this.query<{n: string}>('SELECT pg_database_size(current_database()) AS n'),
+			this.query<{name: string; bytes: string}>(
+				"SELECT c.relname AS name, pg_total_relation_size(c.oid) AS bytes FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace WHERE c.relkind = 'r' AND n.nspname = 'public' ORDER BY bytes DESC"
+			),
+			this.query<{n: string}>('SELECT COALESCE(SUM(octet_length(bytes)), 0) AS n FROM photos'),
+			this.query<{n: string; c: string}>("SELECT COALESCE(SUM((meta->>'bytes')::bigint), 0) AS n, COUNT(*) AS c FROM media"),
+			this.query<{c: string}>('SELECT COUNT(*) AS c FROM purchases'),
+		]);
+		return {
+			dbBytes: Number(db.rows[0].n),
+			blobBytes: Number(media.rows[0].n),
+			photoBytes: Number(photos.rows[0].n),
+			purchases: Number(purchases.rows[0].c),
+			media: Number(media.rows[0].c),
+			tables: tables.rows.map((t) => ({name: t.name, bytes: Number(t.bytes)})),
+		};
+	}
+
+	/** Guarda (o reemplaza) el registro de uso de ese día. */
+	async recordUsage(day: string, u: UsageNow): Promise<void> {
+		await this.query(
+			`INSERT INTO usage_daily (day, db_bytes, blob_bytes, photo_bytes, purchases, media) VALUES ($1,$2,$3,$4,$5,$6)
+			 ON CONFLICT (day) DO UPDATE SET db_bytes = $2, blob_bytes = $3, photo_bytes = $4, purchases = $5, media = $6`,
+			[day, u.dbBytes, u.blobBytes, u.photoBytes, u.purchases, u.media]
+		);
+	}
+
+	async readUsage(): Promise<UsageSnapshot[]> {
+		const r = await this.query<{day: string; db_bytes: string; blob_bytes: string; photo_bytes: string; purchases: number; media: number}>(
+			'SELECT * FROM usage_daily ORDER BY day DESC LIMIT 400'
+		);
+		return r.rows
+			.map((x) => ({day: x.day, dbBytes: Number(x.db_bytes), blobBytes: Number(x.blob_bytes), photoBytes: Number(x.photo_bytes), purchases: x.purchases, media: x.media}))
+			.reverse();
 	}
 
 	// ---- analítica propia (solo contadores, sin datos personales) ----

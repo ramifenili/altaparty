@@ -7,6 +7,7 @@ import {TemplatesTab} from './TemplatesTab';
 import {WatermarkTab} from './WatermarkTab';
 import {SettingsTab} from './SettingsTab';
 import {ClaimsTab} from './ClaimsTab';
+import {UsageTab} from './UsageTab';
 import {getParams, setParams} from './url';
 
 const TABS = [
@@ -14,6 +15,7 @@ const TABS = [
 	{id: 'gratis', label: '🎁 Canjes gratis'},
 	{id: 'plantillas', label: '🎞 Plantillas'},
 	{id: 'marca', label: '💧 Marca de agua'},
+	{id: 'uso', label: '💾 Uso'},
 	{id: 'ajustes', label: '⚙️ Ajustes'},
 ] as const;
 type TabId = (typeof TABS)[number]['id'];

@@ -1,6 +1,8 @@
 import {createMemoryDb, getDb, type ClaimRecord, type Db, type MediaMeta, type PurchaseRecord} from './db.ts';
 import {DEFAULT_SETTINGS, normalizeSettings, type SiteSettings} from '../config/site.ts';
 import {normalizeSpec, type CompiledSpec} from '../templates/compiled-types.ts';
+import {PgStore} from './pg-store.ts';
+import {MEDIA_HEADERS, type ServedMedia} from './media-serve.ts';
 
 // Acceso a los datos. La FUENTE DE VERDAD del pago sigue siendo la API de
 // Mercado Pago; acá se guarda la compra (qué se compró, límites, vencimiento),
@@ -214,6 +216,21 @@ export class DbStore implements PurchaseStore {
 		return had;
 	}
 
+	/** Respuesta lista para servir un medio, con soporte de rangos para reproducir videos. */
+	async serveMedia(id: string, rangeHeader: string | null): Promise<ServedMedia | null> {
+		const meta = await this.getMediaMeta(id);
+		const buf = meta ? await this.db.readFile(`media-${id}`) : null;
+		if (!meta || !buf) return null;
+		const headers = {...MEDIA_HEADERS, 'Content-Type': meta.mime};
+		const range = /^bytes=(\d*)-(\d*)$/.exec(rangeHeader ?? '');
+		if (!range) return {status: 200, headers: {...headers, 'Content-Length': String(buf.length)}, body: new Uint8Array(buf)};
+		const start = range[1] ? Number(range[1]) : 0;
+		const end = Math.min(buf.length - 1, range[2] ? Number(range[2]) : buf.length - 1);
+		if (start > end || start >= buf.length) return {status: 416, headers: {'Content-Range': `bytes */${buf.length}`}, body: null};
+		const part = buf.subarray(start, end + 1);
+		return {status: 206, headers: {...headers, 'Content-Range': `bytes ${start}-${end}/${buf.length}`, 'Content-Length': String(part.length)}, body: new Uint8Array(part)};
+	}
+
 	// ---- analítica propia (solo contadores, sin datos personales) ----
 	trackEvent(day: string, name: string, templateId?: string) {
 		return this.db.tx(
@@ -234,10 +251,16 @@ export class DbStore implements PurchaseStore {
 	}
 }
 
-let shared: DbStore | null = null;
-export function getStore() {
-	shared ??= new DbStore();
-	return shared;
+/** Lo que usa el resto del servidor: lo implementan el archivo local (DbStore) y Postgres + Blob (PgStore). */
+export type AppStore = Omit<DbStore, 'db'>;
+
+let shared: AppStore | null = null;
+/** Con DATABASE_URL usa Postgres + Vercel Blob; sin ella, archivos en .data/ (desarrollo o servidor con disco). */
+export function getStore(): AppStore {
+	if (shared) return shared;
+	if (process.env.DATABASE_URL) return (shared = new PgStore(process.env.DATABASE_URL));
+	if (process.env.VERCEL) throw new Error('Falta DATABASE_URL: en Vercel no hay disco donde guardar los datos.');
+	return (shared = new DbStore());
 }
 
 export function createMemoryStore() {

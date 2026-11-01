@@ -1,7 +1,8 @@
 import {Pool, type PoolClient} from 'pg';
 import {del, get, put} from '@vercel/blob';
 import type {ClaimRecord, MediaMeta, PurchaseRecord} from './db.ts';
-import {DEFAULT_SETTINGS, normalizeSettings, type SiteSettings} from '../config/site.ts';
+import {normalizeSettings, type SiteSettings} from '../config/site.ts';
+import {SEED_SETTINGS} from '../config/seed-settings.ts';
 import {normalizeSpec, type CompiledSpec} from '../templates/compiled-types.ts';
 import {MEDIA_HEADERS, type ServedMedia} from './media-serve.ts';
 import type {UsageNow, UsageSnapshot} from './usage.ts';
@@ -216,7 +217,8 @@ export class PgStore {
 	// ---- ajustes ----
 	async getSettings(): Promise<SiteSettings> {
 		const r = await this.query<{data: unknown}>("SELECT data FROM kv WHERE key = 'settings'");
-		return r.rows[0] ? normalizeSettings(r.rows[0].data) : DEFAULT_SETTINGS;
+		// base vacía: se parte de la configuración inicial del sitio hasta que se guarde algo desde el admin
+		return r.rows[0] ? normalizeSettings(r.rows[0].data) : SEED_SETTINGS;
 	}
 
 	async saveSettings(raw: unknown): Promise<SiteSettings> {

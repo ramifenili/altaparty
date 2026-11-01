@@ -98,6 +98,7 @@ export function AdminApp() {
 				{tab === 'gratis' && <ClaimsTab />}
 				{tab === 'plantillas' && <TemplatesTab />}
 				{tab === 'marca' && <WatermarkTab />}
+				{tab === 'uso' && <UsageTab />}
 				{tab === 'ajustes' && <SettingsTab />}
 			</main>
 		</>

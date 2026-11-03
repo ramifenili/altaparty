@@ -25,17 +25,26 @@ export function Studio({
   const [editing, setEditing] = useState(false);
   const [mobile, setMobile] = useState(false);
   useEffect(() => setMobile(isMobileDevice()), []);
+  // flechas de la vista previa: recorren los diseños de a uno (y vuelven al principio)
+  const step = (dir: 1 | -1) => {
+    if (catalog.length < 2) return;
+    const i = Math.max(
+      0,
+      catalog.findIndex((t) => t.id === state.templateId),
+    );
+    setTemplate(catalog[(i + dir + catalog.length) % catalog.length].id);
+  };
 
   return (
-    <div className="studio">
-      <div className="studio-head">
-        <h1>
-          Tu invitación está quedando <em>increíble</em>
-        </h1>
-        <p>{template.name}. Revisá cómo se verá antes de comprar.</p>
-      </div>
+    <div className={`studio${editing ? " is-editing" : ""}`}>
+      <h1 className="sr-only">Vista previa de tu invitación</h1>
       <div className="studio-preview">
-        <LivePreview />
+        <LivePreview
+          arrows={{
+            onPrev: () => step(-1),
+            onNext: () => step(1),
+          }}
+        />
         {/* 
         <section className="studio-strip" aria-labelledby="tpl-title">
           <h3 id="tpl-title" className="sr-only">
@@ -143,12 +152,12 @@ export function Studio({
             ✏️ Editar
           </button>
         </div>
-				 */}
 
         <p className="note-ok">
           <span aria-hidden="true">✓</span> Vas a poder revisar todo antes de
           pagar
         </p>
+				 */}
 
         <div className="cta-card">
           <button
@@ -158,9 +167,11 @@ export function Studio({
             disabled={generating || editing}
           >
             {generating && <span className="spinner" aria-hidden="true" />}{" "}
-            Generar video con marca de agua →
+            Generar video
           </button>
           <p className="cta-free">Gratis · No se realiza ningún cobro</p>
+        </div>
+        <div className="cta-notes">
           {mobile && (
             <p className="alert alert-info" style={{ marginTop: 10 }}>
               {MOBILE_NOTICE}

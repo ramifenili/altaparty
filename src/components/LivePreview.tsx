@@ -30,7 +30,10 @@ const SCALE = 0.75;
 export function LivePreview({
   clean = false,
   sample = false,
+  arrows,
 }: {
+  /** flechas para pasar al diseño anterior / siguiente (solo en el estudio) */
+  arrows?: { onPrev: () => void; onNext: () => void };
   clean?: boolean;
   /** muestra datos de ejemplo donde todavía no se cargó nada (entrada directa a una plantilla) */
   sample?: boolean;
@@ -184,7 +187,7 @@ export function LivePreview({
   };
 
   return (
-    <div>
+    <div className="lp">
       <PreviewTabs
         ml={admin && !clean}
         mode={mode}
@@ -194,85 +197,111 @@ export function LivePreview({
           if (m !== "video") setPlaying(false);
         }}
       />
-      {mode === "image" && (
-        <StillPreview template={template} content={content} watermark={!clean} />
-      )}
-      {mode === "ml" && admin && <MlImages />}
-    <div className="player" hidden={mode !== "video"}>
-      <button
-        type="button"
-        className="player-stage"
-        onClick={() => setPlaying((p) => !p)}
-        aria-pressed={!playing}
-        aria-label={`${playing ? "Pausar" : "Reproducir"} la vista previa de ${content.name || "tu cumpleañero"} con la plantilla ${template.name}`}
-      >
-        <canvas
-          ref={canvasRef}
-          width={Math.round(720 * SCALE)}
-          height={Math.round(1280 * SCALE)}
-          aria-hidden="true"
-        />
-        {!ready && (
-          <span
-            className="player-loading"
-            role="status"
-            style={{
-              background: `linear-gradient(160deg, ${template.palette[0] ?? "#222"}, ${template.palette[1] ?? template.palette[0] ?? "#111"})`,
-            }}
-          >
-            <span className="player-loading-card">
-              <span className="spinner" aria-hidden="true" />
-              <strong>Preparando «{template.name}»</strong>
-              <small>Cargando diseño, tipografías y animaciones…</small>
-            </span>
-          </span>
-        )}
-        {ready && !playing && (
-          <span className="player-pause" aria-hidden="true">
-            <svg viewBox="0 0 24 24" width="36" height="36">
-              <path d="M8 5v14l11-7z" fill="currentColor" />
-            </svg>
-          </span>
-        )}
-      </button>
-      <div className="player-seek">
-        <span className="player-time" aria-hidden="true">
-          {clock_(time)}
-        </span>
-        <input
-          type="range"
-          className="seek"
-          min={0}
-          max={template.duration}
-          step={0.05}
-          value={Math.min(time, template.duration)}
-          onChange={(e) => seek(Number(e.target.value))}
-          aria-label="Posición del video"
-          aria-valuetext={`${clock_(time)} de ${formatDuration(template.duration)}`}
-          style={
-            {
-              "--p": `${(Math.min(time, template.duration) / template.duration) * 100}%`,
-            } as React.CSSProperties
-          }
-        />
-        <span className="player-time" aria-hidden="true">
-          {formatDuration(template.duration)}
-        </span>
+      <div className="lp-card">
+        <div className="player-wrap">
+          {arrows && (
+            <button
+              type="button"
+              className="lp-arrow lp-prev"
+              aria-label="Ver el diseño anterior"
+              onClick={arrows.onPrev}
+            >
+              ‹
+            </button>
+          )}
+          {mode === "image" && (
+            <StillPreview template={template} content={content} watermark={!clean} />
+          )}
+          {mode === "ml" && admin && <MlImages />}
+          <div className="player" hidden={mode !== "video"}>
+            <button
+              type="button"
+              className="player-stage"
+              onClick={() => setPlaying((p) => !p)}
+              aria-pressed={!playing}
+              aria-label={`${playing ? "Pausar" : "Reproducir"} la vista previa de ${content.name || "tu cumpleañero"} con la plantilla ${template.name}`}
+            >
+              <canvas
+                ref={canvasRef}
+                width={Math.round(720 * SCALE)}
+                height={Math.round(1280 * SCALE)}
+                aria-hidden="true"
+              />
+              {!ready && (
+                <span
+                  className="player-loading"
+                  role="status"
+                  style={{
+                    background: `linear-gradient(160deg, ${template.palette[0] ?? "#222"}, ${template.palette[1] ?? template.palette[0] ?? "#111"})`,
+                  }}
+                >
+                  <span className="player-loading-card">
+                    <span className="spinner" aria-hidden="true" />
+                    <strong>Preparando «{template.name}»</strong>
+                    <small>Cargando diseño, tipografías y animaciones…</small>
+                  </span>
+                </span>
+              )}
+              {ready && !playing && (
+                <span className="player-pause" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" width="36" height="36">
+                    <path d="M8 5v14l11-7z" fill="currentColor" />
+                  </svg>
+                </span>
+              )}
+            </button>
+            <div className="player-seek">
+              <button
+                type="button"
+                className="seek-btn"
+                onClick={() => setPlaying((p) => !p)}
+                aria-label={playing ? "Pausar" : "Reproducir"}
+              >
+                <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+                  {playing ? (
+                    <path d="M7 5h4v14H7zM13 5h4v14h-4z" fill="currentColor" />
+                  ) : (
+                    <path d="M8 5v14l11-7z" fill="currentColor" />
+                  )}
+                </svg>
+              </button>
+              <span className="player-time" aria-hidden="true">
+                {clock_(time)}
+              </span>
+              <input
+                type="range"
+                className="seek"
+                min={0}
+                max={template.duration}
+                step={0.05}
+                value={Math.min(time, template.duration)}
+                onChange={(e) => seek(Number(e.target.value))}
+                aria-label="Posición del video"
+                aria-valuetext={`${clock_(time)} de ${formatDuration(template.duration)}`}
+                style={
+                  {
+                    "--p": `${(Math.min(time, template.duration) / template.duration) * 100}%`,
+                  } as React.CSSProperties
+                }
+              />
+              <span className="player-time" aria-hidden="true">
+                {formatDuration(template.duration)}
+              </span>
+            </div>
+          </div>
+          {arrows && (
+            <button
+              type="button"
+              className="lp-arrow lp-next"
+              aria-label="Ver el diseño siguiente"
+              onClick={arrows.onNext}
+            >
+              ›
+            </button>
+          )}
+        </div>
       </div>
-      <div className="player-controls">
-        {/* <button type="button" className="btn btn-secondary btn-sm" onClick={() => seek(clock.current - SKIP)} aria-label={`Retroceder ${SKIP} segundos`}>
-					⏪ {SKIP} s
-				</button> */}
-        {/* <button type="button" className="btn btn-secondary btn-sm" onClick={() => seek(clock.current + SKIP)} aria-label={`Adelantar ${SKIP} segundos`}>
-					{SKIP} s ⏩
-				</button> */}
-        {/* <button
-          type="button"
-          className="btn btn-secondary btn-sm"
-          onClick={restart}
-        >
-          ↺ Reiniciar
-        </button> */}
+      <div className="player-controls" hidden={mode !== "video"}>
         <button
           type="button"
           className="btn btn-secondary btn-sm"
@@ -295,7 +324,6 @@ export function LivePreview({
           No pudimos reproducir este audio en el navegador.
         </p>
       )}
-    </div>
     </div>
   );
 }

@@ -129,7 +129,7 @@ export default function Landing() {
         <h2>Armá tu invitación en 2 minutos</h2>
         <p>Sin registrarte y sin pagar para ver cómo queda.</p>
         <a className="lf-btn" href="/">
-          Crear mi invitación
+          Ver mi invitación
         </a>
       </section>
 

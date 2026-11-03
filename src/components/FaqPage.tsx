@@ -237,7 +237,7 @@ export function FaqPage() {
           AltaParty
         </a>
         <a className="btn btn-secondary btn-sm" href="/">
-          ← Crear mi invitación
+          Crear mi invitación
         </a>
       </header>
 

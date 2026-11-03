@@ -49,7 +49,7 @@ export function RecoverPurchase({onFound, open}: {onFound: (info: PurchaseInfo) 
 					<label htmlFor="recover-code">Código de compra</label>
 					<input id="recover-code" className="input" value={code} onChange={(e) => setCode(e.target.value)} placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.plantilla" autoComplete="off" aria-invalid={error ? true : undefined} />
 					{error && <p className="error-text" role="alert">{error}</p>}
-					<p className="hint">Lo encontrás en esta pantalla después de pagar. Te llevamos al generador con tu plantilla comprada (con un máximo de generaciones por compra).</p>
+					<p className="hint">Lo encontrás en esta pantalla después de pagar. Te llevamos al creador con tu plantilla comprada (con un máximo de creaciones por compra).</p>
 				</div>
 				<button type="submit" className="btn btn-secondary" disabled={busy}>
 					{busy && <span className="spinner" aria-hidden="true" />} Verificar compra

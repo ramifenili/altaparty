@@ -7,6 +7,7 @@ import { galleryData, toTemplateContent } from "../domain/invitation";
 import { TemplateCanvas } from "./TemplateCanvas";
 import { track } from "../lib/analytics";
 import { formatDuration } from "../audio/library";
+import { Check, Crown } from "lucide-react";
 
 /** Al pasar el mouse solo se reproduce un adelanto (la presentación), no el video completo. */
 const HOVER_RANGE: [number, number] = [0.6, 3.0];
@@ -236,12 +237,12 @@ export function TemplateGallery() {
                         <span className="card-dur">{formatDuration(t.duration)}</span>
                         {selected && (
                           <span className="card-check" aria-hidden="true">
-                            ✓
+                            <Check size={14} strokeWidth={3} />
                           </span>
                         )}
                         {selected && (
                           <span className="card-badge">
-                            <span aria-hidden="true">👑</span> Elegida
+                            <Crown size={13} aria-hidden="true" /> Elegida
                           </span>
                         )}
                       </span>

@@ -20,6 +20,7 @@
     "@ffmpeg/core": "^0.12.10",
     "@ffmpeg/ffmpeg": "^0.12.15",
     "@vercel/blob": "^2.8.2",
+    "lucide-react": "^1.67.0",
     "mercadopago": "^3.6.1",
     "next": "^16.3.4",
     "pg": "^8.23.1",

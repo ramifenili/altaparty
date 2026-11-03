@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { adminApi } from "../admin/api";
 import { useInvitation } from "../state/InvitationProvider";
 import { renderMercadoLibre, type MlVariant } from "../render/mercadolibre";
+import { Download, ShoppingCart } from "lucide-react";
 
 const VARIANTS: { id: MlVariant; label: string }[] = [
   { id: "datos", label: "Información que necesitamos" },
@@ -37,13 +38,18 @@ export function MlImages() {
       try {
         const out: { id: MlVariant; url: string }[] = [];
         for (const v of VARIANTS) {
-          const url = URL.createObjectURL(await renderMercadoLibre(template, v.id));
+          const url = URL.createObjectURL(
+            await renderMercadoLibre(template, v.id),
+          );
           made.push(url);
           out.push({ id: v.id, url });
         }
         if (alive) setImages(out);
       } catch (e) {
-        if (alive) setError(e instanceof Error ? e.message : "No pudimos generar las imágenes.");
+        if (alive)
+          setError(
+            e instanceof Error ? e.message : "No pudimos crear las imágenes.",
+          );
       }
     })();
     return () => {
@@ -57,27 +63,46 @@ export function MlImages() {
       {error && <p className="alert alert-error">{error}</p>}
       {!error && !images.length && (
         <p className="fine" style={{ textAlign: "center" }} role="status">
-          Generando las imágenes…
+          Creando las imágenes…
         </p>
       )}
       <div style={{ display: "grid", gap: 16, justifyItems: "center" }}>
         {images.map((img) => (
-          <figure key={img.id} style={{ margin: 0, display: "grid", gap: 8, justifyItems: "center" }}>
+          <figure
+            key={img.id}
+            style={{
+              margin: 0,
+              display: "grid",
+              gap: 8,
+              justifyItems: "center",
+            }}
+          >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={img.url}
               alt={`Mercado Libre: ${VARIANTS.find((v) => v.id === img.id)?.label}`}
-              style={{ width: "100%", maxWidth: 420, height: "auto", borderRadius: 8 }}
+              style={{
+                width: "100%",
+                maxWidth: 420,
+                height: "auto",
+                borderRadius: 8,
+              }}
             />
-            <a className="btn btn-primary btn-sm" href={img.url} download={`ml-${template.id}-${img.id}.png`}>
-              ⬇ Descargar PNG (1200×1200)
+            <a
+              className="btn btn-primary btn-sm"
+              href={img.url}
+              download={`ml-${template.id}-${img.id}.png`}
+            >
+              <Download size={14} aria-hidden="true" /> Descargar PNG
+              (1200×1200)
             </a>
           </figure>
         ))}
       </div>
       {images.length > 0 && (
         <p className="fine" style={{ textAlign: "center" }}>
-          🛒 Imágenes para la publicación en Mercado Libre (solo admin).
+          <ShoppingCart size={14} aria-hidden="true" /> Imágenes para la
+          publicación en Mercado Libre (solo admin).
         </p>
       )}
     </div>

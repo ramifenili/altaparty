@@ -26,6 +26,7 @@ import { track } from "../lib/analytics";
 import { slugify } from "../lib/seo";
 import { InvitationForm } from "./InvitationForm";
 import { RecoverPurchase } from "./RecoverPurchase";
+import { ArrowLeft, ArrowRight, Download, RefreshCw, ShieldCheck, Star } from "lucide-react";
 
 export const PURCHASE_KEY = "invitacion:compra";
 
@@ -38,7 +39,7 @@ const STATUS_COPY: Record<
     text: "Tu pago está pendiente de acreditación. Esta pantalla se actualiza sola.",
     tone: "info",
   },
-  approved: { text: "¡Pago aprobado! Te llevamos al generador.", tone: "ok" },
+  approved: { text: "¡Pago aprobado! Te llevamos al creador.", tone: "ok" },
   rejected: {
     text: "El pago fue rechazado. Podés intentar de nuevo con otro medio de pago.",
     tone: "error",
@@ -304,7 +305,7 @@ export function OfferPanel({
           </p>
           <p className="offer-tag">
             <span className="tag">
-              <span aria-hidden="true">⭐</span> {template.name}
+              <Star size={13} aria-hidden="true" /> {template.name}
             </span>
           </p>
 
@@ -347,7 +348,6 @@ export function OfferPanel({
               role="status"
               aria-live="polite"
             >
-              {loadingStatus && status === "pending" ? "⏳ " : ""}
               {copy.text}
             </p>
           )}
@@ -387,7 +387,7 @@ export function OfferPanel({
                   <small>Pago seguro · {formatArs(amount)}</small>
                 </span>
                 <span className="btn-arrow" aria-hidden="true">
-                  →
+                  <ArrowRight size={20} />
                 </span>
               </button>
             )}
@@ -397,7 +397,7 @@ export function OfferPanel({
                 href={state.preview.url}
                 download={`vista-previa-${slugify(content.name) || "invitacion"}.mp4`}
               >
-                <span aria-hidden="true">⬇</span> Descargar con marca de agua
+                <Download size={16} aria-hidden="true" /> Descargar con marca de agua
               </a>
             )}
             {/* 
@@ -408,7 +408,7 @@ export function OfferPanel({
 					</button>
 					 */}
             <button type="button" className="btn btn-ghost" onClick={onBack}>
-              <span aria-hidden="true">←</span> Volver y editar mi invitación
+              <ArrowLeft size={16} aria-hidden="true" /> Volver y editar mi invitación
             </button>
             {purchaseId && status !== "refunded" && (
               <button
@@ -420,7 +420,7 @@ export function OfferPanel({
                 {loadingStatus ? (
                   <span className="spinner" aria-hidden="true" />
                 ) : (
-                  "🔄"
+                  <RefreshCw size={16} aria-hidden="true" />
                 )}{" "}
                 Verificar mi pago
               </button>
@@ -432,7 +432,7 @@ export function OfferPanel({
           <ul className="includes">
             {hasVideo(product) && (
               <li>
-                Video MP4 vertical en Full HD 1080×1920 (720×1280 si lo generás
+                Video MP4 vertical en Full HD 1080×1920 (720×1280 si lo creás
                 desde un celular), ideal para WhatsApp e Instagram
               </li>
             )}
@@ -449,11 +449,11 @@ export function OfferPanel({
             {hasVideo(product) && (
               <li>
                 Un solo pago por esta plantilla: hasta {PRICING.maxFinalRenders}{" "}
-                generaciones del video por si te equivocás en un dato
+                creaciones del video por si te equivocás en un dato
               </li>
             )}
             {/* <li>
-            El video se genera en tu navegador. Al comprar guardamos una copia
+            El video se crea en tu navegador. Al comprar guardamos una copia
             de tus datos y tu foto para que puedas volver a descargarlo durante{" "}
             {PRICING.retentionDays} días; después se eliminan automáticamente
           </li> */}
@@ -468,9 +468,9 @@ export function OfferPanel({
               <li>
                 Tocá <em>Comprar con Mercado Pago</em> y pagá.
               </li>
-              <li>Al volver te llevamos solos al generador de tu compra.</li>
+              <li>Al volver te llevamos solos al creador de tu compra.</li>
               <li>
-                Tocá <em>Generar</em> y descargá tu{" "}
+                Tocá <em>Crear</em> y descargá tu{" "}
                 {product === "image"
                   ? "imagen"
                   : product === "both"
@@ -488,9 +488,7 @@ export function OfferPanel({
           </div>
 
           <div className="secure-strip">
-            <span className="secure-ico" aria-hidden="true">
-              🛡
-            </span>
+            <span className="secure-ico" aria-hidden="true"><ShieldCheck size={22} /></span>
             <span>
               <strong>Pago seguro y protegido por Mercado Pago</strong>Tu
               información está encriptada y no la compartimos.

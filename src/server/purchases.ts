@@ -50,8 +50,8 @@ export const UNPAID_TTL_MS = 3 * DAY;
 const MAX_PHOTO_BYTES = 700 * 1024;
 const PRODUCT_TITLE: Record<Product, string> = {
   video: "Invitación de cumpleaños en video (MP4 sin marca de agua)",
-  image: "Invitación de cumpleaños en imagen 1080x1920 (sin marca de agua)",
-  both: "Invitación de cumpleaños: video MP4 + imagen 1080x1920 (sin marca de agua)",
+  image: "Invitación de cumpleaños en imagen 1080×1920 (sin marca de agua)",
+  both: "Invitación de cumpleaños: video MP4 + imagen 1080×1920 (sin marca de agua)",
 };
 
 export type SnapshotInput = {
@@ -439,7 +439,7 @@ export function createPurchaseService(deps: {
       if (kind === "video") {
         if (s.remaining <= 0) {
           throw new PurchaseError(
-            "Ya usaste todas las generaciones incluidas en esta compra.",
+            "Ya usaste todas las creaciones incluidas en esta compra.",
             "limit_reached",
             403,
           );

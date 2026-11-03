@@ -235,7 +235,14 @@ export function InvitationProvider({children, initialTemplateId}: {children: Rea
 		resolvedAudio,
 		setField: useCallback((field, v) => dispatch({type: 'field', field, value: v}), []),
 		setPhotoFile,
-		setTemplate: useCallback((id) => dispatch({type: 'template', id}), []),
+		setTemplate: useCallback(
+			(id) => {
+				// al cambiar de plantilla, si se había quitado la música vuelve la de la plantilla elegida
+				if (id !== latest.current.templateId && latest.current.audio.kind === 'mute') setAudio({kind: 'default'});
+				dispatch({type: 'template', id});
+			},
+			[setAudio]
+		),
 		setAudio,
 		setCustomAudio,
 		goto: useCallback((step) => dispatch({type: 'step', step}), []),

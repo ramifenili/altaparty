@@ -220,8 +220,10 @@ main {
   box-shadow: 0 8px 20px rgba(91, 43, 224, 0.3);
 }
 
+@media (hover: hover) {
 .btn-primary:hover:not(:disabled) {
   box-shadow: 0 10px 26px rgba(91, 43, 224, 0.42);
+}
 }
 
 .btn-secondary {
@@ -230,8 +232,10 @@ main {
   border-color: var(--line);
 }
 
+@media (hover: hover) {
 .btn-secondary:hover:not(:disabled) {
   border-color: var(--brand);
+}
 }
 
 .btn-ghost {
@@ -505,11 +509,19 @@ main {
     border-color 0.15s;
 }
 
-.card:hover,
+
 .card:focus-visible {
   transform: translateY(-4px);
   box-shadow: var(--shadow);
   border-color: var(--brand);
+}
+
+@media (hover: hover) {
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow);
+  border-color: var(--brand);
+}
 }
 
 .card[aria-pressed="true"] {
@@ -745,8 +757,10 @@ main {
   font-size: 16px;
 }
 
+@media (hover: hover) {
 .icon-btn:hover {
   border-color: var(--brand);
+}
 }
 
 .active-audio {
@@ -1934,10 +1948,12 @@ h3 {
   box-shadow: none;
 }
 
+@media (hover: hover) {
 .btn-primary:hover:not(:disabled) {
   background: var(--brand);
   box-shadow: none;
   transform: translateY(-2px);
+}
 }
 
 .btn-secondary {
@@ -1945,13 +1961,17 @@ h3 {
   border-color: var(--line);
 }
 
+@media (hover: hover) {
 .btn-secondary:hover:not(:disabled) {
   border-color: var(--ink);
   background: #fff;
 }
+}
 
+@media (hover: hover) {
 .btn-ghost:hover:not(:disabled) {
   background: #0000000d;
+}
 }
 
 .btn:disabled {
@@ -1986,8 +2006,10 @@ h3 {
   transition: border-color 0.15s ease;
 }
 
+@media (hover: hover) {
 .chip:hover {
   border-color: var(--ink);
+}
 }
 
 .chip[aria-pressed="true"] {
@@ -2000,11 +2022,19 @@ h3 {
   border-radius: var(--radius);
 }
 
-.card:hover,
+
 .card:focus-visible {
   transform: translateY(-3px);
   box-shadow: none;
   border-color: var(--ink);
+}
+
+@media (hover: hover) {
+.card:hover {
+  transform: translateY(-3px);
+  box-shadow: none;
+  border-color: var(--ink);
+}
 }
 
 .card[aria-pressed="true"] {
@@ -2074,11 +2104,17 @@ h3 {
     transition: none;
   }
 
-  .card:hover,
-  .card:focus-visible,
+  
+  .card:focus-visible{
+    transform: none;
+  }
+
+@media (hover: hover) {
+.card:hover,
   .btn-primary:hover:not(:disabled) {
     transform: none;
   }
+}
 }
 
 /* =====================================================================
@@ -2148,9 +2184,11 @@ h3 {
   font-weight: 700;
 }
 
+@media (hover: hover) {
 .app-header .btn-secondary:hover:not(:disabled) {
   background: var(--surface);
   border-color: var(--surface);
+}
 }
 
 .stepper {
@@ -2241,9 +2279,11 @@ main {
   box-shadow: 0 10px 22px rgba(14, 159, 134, 0.28);
 }
 
+@media (hover: hover) {
 .btn-primary:hover:not(:disabled) {
   background: var(--brand);
   box-shadow: 0 12px 26px rgba(14, 159, 134, 0.34);
+}
 }
 
 .btn-ghost {
@@ -2359,8 +2399,10 @@ main {
   background: #fff;
 }
 
+@media (hover: hover) {
 .chip:hover {
   border-color: var(--ink);
+}
 }
 
 .chip[aria-pressed="true"] {
@@ -2378,10 +2420,17 @@ main {
   border-radius: 20px;
 }
 
-.card:hover,
+
 .card:focus-visible {
   border-color: var(--surface);
   box-shadow: 0 12px 30px rgba(18, 33, 74, 0.12);
+}
+
+@media (hover: hover) {
+.card:hover {
+  border-color: var(--surface);
+  box-shadow: 0 12px 30px rgba(18, 33, 74, 0.12);
+}
 }
 
 .card[aria-pressed="true"] {
@@ -2695,9 +2744,11 @@ main {
     background-color 0.15s ease;
 }
 
+@media (hover: hover) {
 .chev:hover {
   border-color: var(--ink);
   background: var(--tint);
+}
 }
 
 .note-ok {
@@ -3044,9 +3095,11 @@ main {
   font-size: 14px;
 }
 
+@media (hover: hover) {
 .chev.play:hover {
   background: var(--surface);
   border-color: var(--surface);
+}
 }
 
 .off-badge {
@@ -3657,8 +3710,10 @@ body:has(.final) footer.site-footer {
   margin-top: 10px;
 }
 
+@media (hover: hover) {
 .admin-chip:hover {
   background: var(--surface);
+}
 }
 
 /* =====================================================================
@@ -3723,9 +3778,11 @@ body:has(.final) footer.site-footer {
     transform 0.15s ease;
 }
 
+@media (hover: hover) {
 .lf-btn:hover {
   background: var(--lf-teal-dark);
   transform: translateY(-2px);
+}
 }
 
 .lf-btn:active {
@@ -3760,9 +3817,11 @@ body:has(.final) footer.site-footer {
   text-decoration: none;
 }
 
+@media (hover: hover) {
 .lf-nav nav a:hover {
   text-decoration: underline;
   text-underline-offset: 4px;
+}
 }
 
 @media (min-width: 720px) {
@@ -3825,8 +3884,10 @@ body:has(.final) footer.site-footer {
   border-radius: 8px;
 }
 
+@media (hover: hover) {
 .lf-banner button:hover {
   background: #0000000f;
+}
 }
 
 /* hero */
@@ -3918,9 +3979,11 @@ body:has(.final) footer.site-footer {
     transform 0.15s ease;
 }
 
+@media (hover: hover) {
 .lf-trio article:hover {
   border-color: var(--lf-ink);
   transform: translateY(-3px);
+}
 }
 
 .lf-ico {
@@ -4054,10 +4117,12 @@ body:has(.final) footer.site-footer {
     transition: none;
   }
 
-  .lf-btn:hover,
+  @media (hover: hover) {
+.lf-btn:hover,
   .lf-trio article:hover {
     transform: none;
   }
+}
 }
 
 /* ---------- refinamientos de experiencia móvil ---------- */
@@ -4645,9 +4710,11 @@ body:has(.final) footer.site-footer {
     transform 0.15s ease;
 }
 
+@media (hover: hover) {
 .carousel-arrow:hover {
   background: var(--surface);
   transform: translateY(-50%) scale(1.06);
+}
 }
 
 .carousel-prev {
@@ -5341,8 +5408,10 @@ main:has(.studio) {
   transition: background-color 0.15s ease;
 }
 
+@media (hover: hover) {
 .seek-btn:hover {
   background: var(--tint);
+}
 }
 
 .studio .player-controls {
@@ -5376,9 +5445,11 @@ main:has(.studio) {
     transform 0.15s ease;
 }
 
+@media (hover: hover) {
 .lp-arrow:hover {
   background: var(--surface);
   transform: translateY(-50%) scale(1.07);
+}
 }
 
 .lp-prev {
@@ -5502,8 +5573,10 @@ main:has(.studio) {
   z-index: 2;
 }
 
+@media (hover: hover) {
 .row-body-close:hover {
   background: var(--tint);
+}
 }
 
 /* datos de la fiesta en edición: misma grilla compacta que el formulario de la home */
@@ -6530,23 +6603,29 @@ body {
   box-shadow: none;
 }
 
+@media (hover: hover) {
 .btn-primary:hover:not(:disabled) {
   background: var(--c-primary-strong);
   box-shadow: var(--shadow-pop);
   transform: translateY(-1px);
+}
 }
 
 .btn-secondary {
   border-color: var(--c-line-strong);
 }
 
+@media (hover: hover) {
 .btn-secondary:hover:not(:disabled) {
   border-color: var(--c-primary);
   background: var(--c-primary-soft);
 }
+}
 
+@media (hover: hover) {
 .btn-ghost:hover:not(:disabled) {
   background: var(--c-primary-soft);
+}
 }
 
 .input,
@@ -6976,9 +7055,14 @@ h3,
 }
 
 .btn-primary,
-.lf-btn,
+.lf-btn{
+  box-shadow: none;
+}
+
+@media (hover: hover) {
 .btn-primary:hover:not(:disabled) {
   box-shadow: none;
+}
 }
 
 .btn-primary,
@@ -6987,11 +7071,13 @@ h3,
   color: var(--wise-forest);
 }
 
+@media (hover: hover) {
 .btn-primary:hover:not(:disabled),
 .lf-btn:hover {
   background: var(--wise-lime-hover);
   color: var(--wise-forest);
   transform: scale(1.04);
+}
 }
 
 .btn:active:not(:disabled),
@@ -7005,21 +7091,31 @@ h3,
   border: 0;
 }
 
+@media (hover: hover) {
 .btn-secondary:hover:not(:disabled) {
   background: var(--wise-wash-hover);
   border: 0;
   transform: scale(1.03);
 }
+}
 
-.btn-ghost,
-.btn-ghost:hover:not(:disabled) {
+.btn-ghost{
   color: var(--wise-forest);
   background: transparent;
 }
 
+@media (hover: hover) {
+.btn-ghost:hover:not(:disabled) {
+  color: var(--wise-forest);
+  background: transparent;
+}
+}
+
+@media (hover: hover) {
 .btn-ghost:hover:not(:disabled) {
   text-decoration: underline;
   text-underline-offset: 3px;
+}
 }
 
 .btn-primary .spinner {
@@ -7188,9 +7284,14 @@ a {
   border-radius: var(--r-lg);
 }
 
-.lf-nav nav a,
+.lf-nav nav a{
+  color: var(--wise-ink);
+}
+
+@media (hover: hover) {
 .lf-nav nav a:hover {
   color: var(--wise-ink);
+}
 }
 
 .lf-banner {
@@ -7249,8 +7350,10 @@ main[data-step="offer"] .product:first-of-type {
   border-top: 0;
 }
 
+@media (hover: hover) {
 main[data-step="offer"] .product:hover {
   background: #f4f6f1;
+}
 }
 
 main[data-step="offer"] .product[data-on="true"] {
@@ -7311,10 +7414,12 @@ main[data-step="offer"] .product-price {
   color: #fff;
 }
 
+@media (hover: hover) {
 .btn-buy:hover:not(:disabled),
 .btn-primary.btn-buy:hover:not(:disabled) {
   background: #2968c8;
   color: #fff;
+}
 }
 
 .btn-buy .btn-ico {

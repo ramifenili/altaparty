@@ -100,8 +100,36 @@ export function AudioPicker() {
         ? template.defaultAudioId
         : null;
 
+  // la lista se cierra con Esc o con un clic fuera de la tarjeta
+  useEffect(() => {
+    if (!open) return;
+    const close = () => {
+      stopSample();
+      setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") close();
+    };
+    const onDown = (e: MouseEvent | TouchEvent) => {
+      // el fondo oscuro es parte de la tarjeta: solo cuentan la lista y la fila de abrir/cerrar
+      const t = e.target as Element;
+      if (!t.closest(".row-body") && !t.closest(".row-card")) close();
+    };
+    document.addEventListener("keydown", onKey);
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("touchstart", onDown);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("touchstart", onDown);
+    };
+  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
+
   return (
-    <section className="row-card-wrap" aria-labelledby="audio-title">
+    <section
+      className="row-card-wrap"
+      aria-labelledby="audio-title"
+    >
       <div className="row-card">
         <span className="ri" aria-hidden="true">
           🎵
@@ -156,6 +184,17 @@ export function AudioPicker() {
       </div>
       {open && (
         <div id="audio-body" className="row-body">
+          <button
+            type="button"
+            className="row-body-close"
+            aria-label="Cerrar la lista de música"
+            onClick={() => {
+              stopSample();
+              setOpen(false);
+            }}
+          >
+            ✕
+          </button>
           <p className="hint" style={{ marginTop: 0 }}>
             Cada diseño trae su propia música. Podés cambiarla o subir la tuya.
           </p>

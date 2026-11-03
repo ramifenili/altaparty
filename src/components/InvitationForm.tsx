@@ -27,7 +27,7 @@ function PhotoField() {
 	};
 
 	return (
-		<div className="field">
+		<div className="field f-photo">
 			<span className="label" id={`${id}-l`}>
 				Foto del cumpleañero/a <span className="opt">(opcional)</span>
 			</span>
@@ -68,7 +68,8 @@ export function InvitationForm({submitLabel, onSubmit, onCancel}: Props) {
 	const [submitted, setSubmitted] = useState(false);
 	const uid = useId();
 	const errors = validateInvitation(state.data);
-	const show = (f: FieldName) => (submitted || touched[f]) && errors[f];
+	// los errores se muestran de a un campo: al salir de cada uno, o el primero pendiente al enviar
+	const show = (f: FieldName) => touched[f] && errors[f];
 
 	const field = (f: FieldName) => ({
 		id: `${uid}-${f}`,
@@ -94,7 +95,10 @@ export function InvitationForm({submitLabel, onSubmit, onCancel}: Props) {
 			// lleva el foco al primer campo con error
 			const order: FieldName[] = ['name', 'age', 'date', 'venue', 'address', 'time', 'timeEnd'];
 			const first = order.find((k) => errors[k]);
-			if (first) document.getElementById(`${uid}-${first}`)?.focus();
+			if (first) {
+				setTouched((t) => ({...t, [first]: true}));
+				document.getElementById(`${uid}-${first}`)?.focus();
+			}
 			return;
 		}
 		onSubmit();
@@ -130,40 +134,40 @@ export function InvitationForm({submitLabel, onSubmit, onCancel}: Props) {
 		<form onSubmit={submit} noValidate className="form-grid" aria-label="Datos de la invitación">
 			<p className="hint" style={{margin: 0}}>Los campos con <span className="req">*</span> son obligatorios.</p>
 			<PhotoField />
-			<div className="field">
+			<div className="field f-name">
 				{label('name', 'Nombre del cumpleañero/a')}
 				<input {...field('name')} type="text" autoComplete="off" autoCapitalize="words" enterKeyHint="next" maxLength={LIMITS.name + 10} placeholder="Ej.: Mateo" required />
 				{err('name')}
 			</div>
 			<div className="row-2">
-				<div className="field">
+				<div className="field f-age">
 					{label('age', 'Edad que cumple')}
 					<input {...field('age')} type="text" inputMode="numeric" enterKeyHint="next" maxLength={3} placeholder="Ej.: 7" required />
 					{err('age')}
 				</div>
-				<div className="field">
+				<div className="field f-date">
 					{label('date', 'Fecha del evento')}
 					<input {...field('date')} type="date" min={todayIso()} required />
 					{err('date')}
 				</div>
 			</div>
-			<div className="field">
+			<div className="field f-venue">
 				{label('venue', 'Nombre del salón o lugar')}
 				{growing('venue', 'Ej.: Salón Los Pibes')}
 				{err('venue')}
 			</div>
-			<div className="field">
+			<div className="field f-address">
 				{label('address', 'Dirección del salón o lugar')}
 				{growing('address', 'Ej.: Av. Corrientes 1234, CABA')}
 				{err('address')}
 			</div>
 			<div className="row-2">
-				<div className="field">
+				<div className="field f-time">
 					{label('time', 'Horario desde')}
 					<input {...field('time')} type="time" required />
 					{err('time')}
 				</div>
-				<div className="field">
+				<div className="field f-timeend">
 					<label htmlFor={`${uid}-timeEnd`}>
 						Hasta <span className="hint" style={{display: 'inline'}}>(opcional)</span>
 					</label>
@@ -171,7 +175,7 @@ export function InvitationForm({submitLabel, onSubmit, onCancel}: Props) {
 					{err('timeEnd')}
 				</div>
 			</div>
-			{submitted && Object.keys(errors).length > 0 && (
+			{submitted && Object.keys(errors).length > 0 && Object.keys(errors).some((k) => touched[k as FieldName]) && (
 				<p className="alert alert-error" role="alert">Revisá los campos marcados para continuar.</p>
 			)}
 			<div className="actions-bar">

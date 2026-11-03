@@ -36,6 +36,19 @@ import { LivePreview } from "./LivePreview";
 import { InvitationForm } from "./InvitationForm";
 import { AudioPicker } from "./AudioPicker";
 import { ProgressView } from "./ProgressView";
+import { GenerationStage, revealFor } from "./GenerationStage";
+import {
+  ArrowLeft,
+  Check,
+  CircleCheck,
+  Clapperboard,
+  Download,
+  FlaskConical,
+  Lock,
+  Music,
+  RotateCw,
+  SkipForward,
+} from "lucide-react";
 
 const dateFmt = (ms: number) =>
   new Date(ms).toLocaleDateString("es-AR", {
@@ -43,6 +56,11 @@ const dateFmt = (ms: number) =>
     month: "long",
     year: "numeric",
   });
+
+/** mínimo que se ve la animación de materialización antes de mostrar el video final */
+const FINAL_MIN_ANIM_MS = 14000;
+/** celebración ("¡listo!" con confeti) antes de reemplazar la animación por el video */
+const FINAL_CELEBRATE_MS = 2200;
 
 /**
  * Generador de una compra ya aprobada. Si el servidor guardó lo que se compró, los datos, la foto
@@ -75,7 +93,15 @@ export function PurchasedGenerator({
   const job = useExportJob();
   const admin = useIsAdmin();
   const [error, setError] = useState<string | null>(null);
-  const [finalUrl, setFinalUrl] = useState<string | null>(null);
+  const [rawUrl, setFinalUrl] = useState<string | null>(null);
+  // la animación de materialización dura al menos FINAL_MIN_ANIM_MS desde que empieza a generar;
+  // recién después se muestra "listo" y, tras la celebración, el video con su reproductor
+  const [genStart, setGenStart] = useState<number | null>(null);
+  const [now, setNow] = useState(0);
+  const elapsed = genStart === null ? Infinity : now - genStart;
+  const finalUrl = rawUrl && elapsed >= FINAL_MIN_ANIM_MS ? rawUrl : null;
+  const showVideo =
+    !!rawUrl && elapsed >= FINAL_MIN_ANIM_MS + FINAL_CELEBRATE_MS;
   const [delivered, setDelivered] = useState(false);
   const [load, setLoad] = useState<"loading" | "ready" | "error">(
     info.hasSnapshot ? "loading" : "ready",
@@ -114,6 +140,14 @@ export function PurchasedGenerator({
     if (jobStatus === "running" || jobStatus === "error")
       progressRef.current?.scrollIntoView({ block: "nearest" });
   }, [jobStatus]);
+  // reloj de la animación (solo mientras hace falta)
+  const animating = genStart !== null && !showVideo;
+  useEffect(() => {
+    if (!animating) return;
+    setNow(Date.now());
+    const t = setInterval(() => setNow(Date.now()), 400);
+    return () => clearInterval(t);
+  }, [animating]);
   useEffect(() => {
     if (finalUrl) resultRef.current?.scrollIntoView({ block: "nearest" });
   }, [finalUrl]);
@@ -179,7 +213,7 @@ export function PurchasedGenerator({
   const generateImage = async () => {
     if (Object.keys(validateInvitation(state.data, new Date(0))).length) {
       setError(
-        "Completá todos los datos obligatorios antes de generar la imagen.",
+        "Completá todos los datos obligatorios antes de crear la imagen.",
       );
       return;
     }
@@ -209,7 +243,7 @@ export function PurchasedGenerator({
         .catch(() => setDelivered(true));
     } catch (e) {
       setError(
-        e instanceof Error ? e.message : "No pudimos generar la imagen.",
+        e instanceof Error ? e.message : "No pudimos crear la imagen.",
       );
     } finally {
       setImgBusy(false);
@@ -270,13 +304,13 @@ export function PurchasedGenerator({
   const generateVideo = async () => {
     if (Object.keys(validateInvitation(state.data, new Date(0))).length) {
       setError(
-        "Completá todos los datos obligatorios antes de generar el video.",
+        "Completá todos los datos obligatorios antes de crear el video.",
       );
       return;
     }
     if (needAudio && resolvedAudio.kind !== "file") {
       setError(
-        "Tu compra usó un audio propio que no guardamos. Volvé a subirlo para generar el video igual que el original.",
+        "Tu compra usó un audio propio que no guardamos. Volvé a subirlo para crear el video igual que el original.",
       );
       return;
     }
@@ -289,6 +323,8 @@ export function PurchasedGenerator({
       urlRef.current = null;
       setFinalUrl(null);
     }
+    setNow(Date.now());
+    setGenStart(Date.now());
     track("final_started", { templateId: template.id });
     const blob = await job.start(
       async ({ signal, onProgress }) => {
@@ -374,13 +410,13 @@ export function PurchasedGenerator({
         ? "Tu video y tu imagen"
         : finalUrl
           ? "Tu video está listo"
-          : "Generá tu video final";
+          : "Creá tu video final";
   const chip = showImage
     ? imageUrls
       ? { ok: true, text: "Tu imagen está lista." }
       : {
           ok: false,
-          text: imgBusy ? "Generando tu imagen…" : "Tu compra está confirmada.",
+          text: imgBusy ? "Creando tu imagen…" : "Tu compra está confirmada.",
         }
     : finalUrl
       ? {
@@ -390,21 +426,29 @@ export function PurchasedGenerator({
             : "Tu video está listo.",
         }
       : job.isRunning
-        ? { ok: false, text: "Generando tu video…" }
+        ? { ok: false, text: "Creando tu video…" }
         : load === "loading"
           ? { ok: false, text: "Cargando los datos de tu compra…" }
           : { ok: false, text: "Tu compra está confirmada." };
+  // la animación reemplaza al video mientras genera y hasta que termina la celebración
+  const stageDone = !!finalUrl && !showVideo;
+  // el avance que se muestra: el real del render, sin pasarse del mínimo de la animación
+  const animProgress = Math.min(
+    revealFor(job.state),
+    Math.max(0, Math.min(1, elapsed / FINAL_MIN_ANIM_MS)),
+  );
+  const stageOn = !showImage && (job.isRunning || (!!rawUrl && !showVideo));
   const showGenerate =
     hasVideo(product) || (!imageUrls && !imgBusy && imageTried.current);
   const generateLabel = noMore
-    ? "Sin generaciones disponibles"
+    ? "Sin creaciones disponibles"
     : busy
-      ? "Generando tu video…"
+      ? "Creando tu video…"
       : product === "image"
         ? "Reintentar la imagen"
         : finalUrl
-          ? "Generar de nuevo"
-          : "Generar mi video final";
+          ? "Crear de nuevo"
+          : "Crear mi video final";
 
   return (
     <div className="final">
@@ -419,7 +463,7 @@ export function PurchasedGenerator({
         >
           {chip.ok ? (
             <span className="chip-ico" aria-hidden="true">
-              ✓
+              <Check size={14} strokeWidth={3} />
             </span>
           ) : busy ? (
             <span className="spinner" aria-hidden="true" />
@@ -448,10 +492,21 @@ export function PurchasedGenerator({
                 watermark={false}
               />
             )
-          ) : finalUrl ? (
+          ) : stageOn ? (
+            <GenerationStage
+              clean
+              template={template}
+              content={content}
+              phase={stageDone ? "done" : job.state.phase}
+              state={stageDone ? "done" : "running"}
+              hasAudio={resolvedAudio.kind !== "none"}
+              reveal={animProgress}
+              percent={stageDone ? 100 : Math.min(99, Math.floor(animProgress * 100))}
+            />
+          ) : showVideo && rawUrl ? (
             <video
               className="final-video"
-              src={finalUrl}
+              src={rawUrl}
               controls
               playsInline
               aria-label="Tu video final sin marca de agua"
@@ -476,186 +531,225 @@ export function PurchasedGenerator({
 
       <div className="final-side">
         <div className="final-col">
-        {locked ? (
-          <section
-            className="final-card final-summary"
-            aria-labelledby="gen-title"
-          >
-            <h2 id="gen-title">
-              <span aria-hidden="true">⏳</span> Tu invitación{" "}
-              <span aria-hidden="true">🔒</span>
-            </h2>
-            <p className="final-sub">
-              Plantilla: <strong>{template.name}</strong>
-            </p>
-            <dl className="final-dl">
-              <dt>Cumpleañero/a</dt>
-              <dd>
-                {state.photo && (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    className="final-avatar"
-                    src={state.photo.previewUrl}
-                    alt="Foto de tu compra"
-                  />
-                )}
-                {content.name}, {content.age} años
-              </dd>
-              <dt>Fecha</dt>
-              <dd>{formatLongDate(d.date)}</dd>
-              <dt>Horario</dt>
-              <dd>{content.time}</dd>
-              <dt>Lugar</dt>
-              <dd>{content.venue}</dd>
-              <dt>Dirección</dt>
-              <dd>{content.address}</dd>
-            </dl>
-            {needAudio && (
-              <AttachAudio
-                onFile={setCustomAudio}
-                attached={resolvedAudio.kind === "file"}
-              />
-            )}
-          </section>
-        ) : (
-          <>
-            <section className="final-card" aria-labelledby="gen-title">
-              <h2 id="gen-title">Tus datos</h2>
-              <InvitationForm
-                submitLabel={
-                  noMore
-                    ? "Sin generaciones disponibles"
-                    : busy
-                      ? "Generando…"
-                      : product === "image"
-                        ? "🖼 Generar mi imagen"
-                        : "🎬 Generar mi video final"
-                }
-                onSubmit={() => void generate()}
-              />
+          {locked ? (
+            <section
+              className="final-card final-summary"
+              aria-labelledby="gen-title"
+            >
+              <h2 id="gen-title">
+                Tu invitación <Lock size={18} aria-hidden="true" />
+              </h2>
+              <p className="final-sub">
+                Plantilla: <strong>{template.name}</strong>
+              </p>
+              <dl className="final-dl">
+                <dt>Cumpleañero/a</dt>
+                <dd>
+                  {state.photo && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      className="final-avatar"
+                      src={state.photo.previewUrl}
+                      alt="Foto de tu compra"
+                    />
+                  )}
+                  {content.name}, {content.age} años
+                </dd>
+                <dt>Fecha</dt>
+                <dd>{formatLongDate(d.date)}</dd>
+                <dt>Horario</dt>
+                <dd>{content.time}</dd>
+                <dt>Lugar</dt>
+                <dd>{content.venue}</dd>
+                <dt>Dirección</dt>
+                <dd>{content.address}</dd>
+              </dl>
+              {needAudio && (
+                <AttachAudio
+                  onFile={setCustomAudio}
+                  attached={resolvedAudio.kind === "file"}
+                />
+              )}
             </section>
-            <AudioPicker />
-          </>
-        )}
-
+          ) : (
+            <>
+              <section className="final-card" aria-labelledby="gen-title">
+                <h2 id="gen-title">Tus datos</h2>
+                <InvitationForm
+                  submitLabel={
+                    noMore
+                      ? "Sin creaciones disponibles"
+                      : busy
+                        ? "Creando…"
+                        : product === "image"
+                          ? "Crear mi imagen"
+                          : "Crear mi video final"
+                  }
+                  onSubmit={() => void generate()}
+                />
+              </section>
+              <AudioPicker />
+            </>
+          )}
         </div>
         <div className="final-col">
-        {(job.state.status === "running" || job.state.status === "error") && (
+          {(job.state.status === "running" || job.state.status === "error") && (
+            <section
+              className="final-card final-progress"
+              aria-busy={busy}
+              ref={progressRef}
+            >
+              {job.state.warning && (
+                <p className="alert alert-info">{job.state.warning}</p>
+              )}
+              {job.state.status === "error" ? (
+                <p className="alert alert-error" role="alert">
+                  {job.state.error}
+                </p>
+              ) : (
+                <ProgressView
+                  job={job.state}
+                  finalLabel="Preparando tu descarga..."
+                  title={hasVideo(product) ? "Creando tu video…" : "Creando…"}
+                />
+              )}
+              {admin && job.state.status === "running" && (
+                <button
+                  type="button"
+                  className="admin-chip"
+                  onClick={job.cancel}
+                >
+                  <SkipForward size={14} aria-hidden="true" /> Saltear creación
+                  (admin)
+                </button>
+              )}
+            </section>
+          )}
+
           <section
-            className="final-card final-progress"
-            aria-busy={busy}
-            ref={progressRef}
+            className="final-card final-deliver"
+            aria-label="Descargas"
+            ref={resultRef}
           >
-            {job.state.warning && (
-              <p className="alert alert-info">{job.state.warning}</p>
-            )}
-            {job.state.status === "error" ? (
+            {error && (
               <p className="alert alert-error" role="alert">
-                {job.state.error}
+                {error}
               </p>
-            ) : (
-              <ProgressView
-                job={job.state}
-                finalLabel="Preparando tu descarga..."
-                title={hasVideo(product) ? "Generando tu video…" : "Generando…"}
-              />
             )}
-            {admin && job.state.status === "running" && (
-              <button type="button" className="admin-chip" onClick={job.cancel}>
-                ⏭ Saltear generación (admin)
+            {finalUrl && (
+              <a
+                className="btn btn-primary btn-block btn-download"
+                href={finalUrl}
+                download={`${fileBase}.mp4`}
+                onClick={() =>
+                  track("video_downloaded", { templateId: template.id })
+                }
+              >
+                <Download size={18} aria-hidden="true" /> Descargar video MP4
+                {dims ? ` · ${dims}` : ""}
+              </a>
+            )}
+            {imageUrls && (
+              <div className={finalUrl ? "dl-row" : "dl-stack"}>
+                <a
+                  className={`btn btn-block ${finalUrl ? "btn-secondary" : "btn-primary btn-download"}`}
+                  href={imageUrls.png}
+                  download={`${fileBase}.png`}
+                  onClick={() =>
+                    track("image_downloaded", { templateId: template.id })
+                  }
+                >
+                  <Download size={18} aria-hidden="true" /> Imagen PNG
+                  {finalUrl ? "" : " · 1080×1920"}
+                </a>
+                <a
+                  className="btn btn-secondary btn-block"
+                  href={imageUrls.jpg}
+                  download={`${fileBase}.jpg`}
+                  onClick={() =>
+                    track("image_downloaded", { templateId: template.id })
+                  }
+                >
+                  <Download size={18} aria-hidden="true" />{" "}
+                  {finalUrl ? "Imagen JPG" : "Descargar en JPG (más liviana)"}
+                </a>
+              </div>
+            )}
+            {/* botón "Generar de nuevo" (cuando ya hay video) desactivado por ahora:
+          {showGenerate && finalUrl && ( ...mismo botón con RotateCw... )} */}
+            {showGenerate && !rawUrl && (
+              <button
+                type="button"
+                className={`btn btn-block ${finalUrl ? "btn-ghost" : "btn-primary btn-download"}`}
+                disabled={busy || noMore || load !== "ready"}
+                onClick={() => void generate()}
+              >
+                {busy ? (
+                  <span className="spinner" aria-hidden="true" />
+                ) : finalUrl ? (
+                  <RotateCw size={16} aria-hidden="true" />
+                ) : (
+                  <Clapperboard size={16} aria-hidden="true" />
+                )}{" "}
+                {generateLabel}
               </button>
             )}
+            {!finalUrl && !imageUrls && !showGenerate && (
+              <p className="final-wait">Estamos preparando tus archivos…</p>
+            )}
           </section>
-        )}
 
-        <section
-          className="final-card final-deliver"
-          aria-label="Descargas"
-          ref={resultRef}
-        >
-          {error && (
-            <p className="alert alert-error" role="alert">
-              {error}
-            </p>
-          )}
-          {finalUrl && (
-            <a
-              className="btn btn-primary btn-block btn-download"
-              href={finalUrl}
-              download={`${fileBase}.mp4`}
-              onClick={() =>
-                track("video_downloaded", { templateId: template.id })
-              }
-            >
-              <span aria-hidden="true">⬇</span> Descargar video MP4
-              {dims ? ` · ${dims}` : ""}
-            </a>
-          )}
-          {imageUrls && (
-            <div className={finalUrl ? "dl-row" : "dl-stack"}>
-              <a
-                className={`btn btn-block ${finalUrl ? "btn-secondary" : "btn-primary btn-download"}`}
-                href={imageUrls.png}
-                download={`${fileBase}.png`}
-                onClick={() =>
-                  track("image_downloaded", { templateId: template.id })
-                }
-              >
-                <span aria-hidden="true">⬇</span> Imagen PNG
-                {finalUrl ? "" : " · 1080×1920"}
-              </a>
-              <a
-                className="btn btn-secondary btn-block"
-                href={imageUrls.jpg}
-                download={`${fileBase}.jpg`}
-                onClick={() =>
-                  track("image_downloaded", { templateId: template.id })
-                }
-              >
-                <span aria-hidden="true">⬇</span>{" "}
-                {finalUrl ? "Imagen JPG" : "Descargar en JPG (más liviana)"}
-              </a>
-            </div>
-          )}
-          {showGenerate && (
-            <button
-              type="button"
-              className={`btn btn-block ${finalUrl ? "btn-ghost" : "btn-primary btn-download"}`}
-              disabled={busy || noMore || load !== "ready"}
-              onClick={() => void generate()}
-            >
-              {busy ? (
-                <span className="spinner" aria-hidden="true" />
-              ) : (
-                <span aria-hidden="true">{finalUrl ? "↻" : "🎬"}</span>
-              )}{" "}
-              {generateLabel}
-            </button>
-          )}
-          {!finalUrl && !imageUrls && !showGenerate && (
-            <p className="final-wait">Estamos preparando tus archivos…</p>
-          )}
-        </section>
-
-        {product !== "both" && (
-          <section className="final-upsell" aria-label="Completar la compra">
-            {product === "image" ? (
-              info.videoPurchaseId ? (
+          {product !== "both" && (
+            <section className="final-upsell" aria-label="Completar la compra">
+              {product === "image" ? (
+                info.videoPurchaseId ? (
+                  <>
+                    <span>Ya sumaste el video a tu compra.</span>
+                    <a
+                      className="btn btn-secondary btn-sm"
+                      href={`/?compra=${encodeURIComponent(info.videoPurchaseId)}`}
+                    >
+                      Ir a mi video
+                    </a>
+                  </>
+                ) : (
+                  <>
+                    <span>
+                      <strong>¿Lo querés también en video?</strong> Sumalo por{" "}
+                      <strong>{formatArs(videoPromoPrice(PRICING))}</strong>{" "}
+                      <s>{formatArs(PRICING.price)}</s>
+                    </span>
+                    <button
+                      type="button"
+                      className="btn btn-secondary btn-sm"
+                      disabled={upsellBusy || !info.hasSnapshot}
+                      onClick={() => void addMissing()}
+                    >
+                      {upsellBusy ? (
+                        <span className="spinner" aria-hidden="true" />
+                      ) : (
+                        "Agregar"
+                      )}
+                    </button>
+                  </>
+                )
+              ) : info.imagePurchaseId ? (
                 <>
-                  <span>🎬 Ya sumaste el video a tu compra.</span>
+                  <span>Ya sumaste la imagen a tu compra.</span>
                   <a
                     className="btn btn-secondary btn-sm"
-                    href={`/?compra=${encodeURIComponent(info.videoPurchaseId)}`}
+                    href={`/?compra=${encodeURIComponent(info.imagePurchaseId)}`}
                   >
-                    Ir a mi video
+                    Ir a mi imagen
                   </a>
                 </>
               ) : (
                 <>
                   <span>
-                    <strong>🎬 ¿Lo querés también en video?</strong> Sumalo por{" "}
-                    <strong>{formatArs(videoPromoPrice(PRICING))}</strong>{" "}
-                    <s>{formatArs(PRICING.price)}</s>
+                    <strong>¿La querés también en imagen?</strong> PNG y JPG
+                    1080×1920 por{" "}
+                    <strong>{formatArs(imagePromoPrice(PRICING))}</strong>{" "}
+                    <s>{formatArs(PRICING.imagePrice)}</s>
                   </span>
                   <button
                     type="button"
@@ -670,51 +764,18 @@ export function PurchasedGenerator({
                     )}
                   </button>
                 </>
-              )
-            ) : info.imagePurchaseId ? (
-              <>
-                <span>🖼 Ya sumaste la imagen a tu compra.</span>
-                <a
-                  className="btn btn-secondary btn-sm"
-                  href={`/?compra=${encodeURIComponent(info.imagePurchaseId)}`}
-                >
-                  Ir a mi imagen
-                </a>
-              </>
-            ) : (
-              <>
-                <span>
-                  <strong>🖼 ¿La querés también en imagen?</strong> PNG y JPG
-                  1080×1920 por{" "}
-                  <strong>{formatArs(imagePromoPrice(PRICING))}</strong>{" "}
-                  <s>{formatArs(PRICING.imagePrice)}</s>
-                </span>
-                <button
-                  type="button"
-                  className="btn btn-secondary btn-sm"
-                  disabled={upsellBusy || !info.hasSnapshot}
-                  onClick={() => void addMissing()}
-                >
-                  {upsellBusy ? (
-                    <span className="spinner" aria-hidden="true" />
-                  ) : (
-                    "Agregar"
-                  )}
-                </button>
-              </>
-            )}
-          </section>
-        )}
-
+              )}
+            </section>
+          )}
         </div>
         <footer className="final-meta">
           <p>
-            <span aria-hidden="true">✅</span> Compra confirmada · Código{" "}
-            <code>{info.purchaseId}</code>
+            <CircleCheck size={16} aria-hidden="true" /> Compra confirmada ·
+            Código <code>{info.purchaseId}</code>
             {hasVideo(product) && (
               <>
                 {" "}
-                · Generaciones del video: {info.remaining} de{" "}
+                · Creaciones del video: {info.remaining} de{" "}
                 {PRICING.maxFinalRenders}
               </>
             )}
@@ -726,13 +787,18 @@ export function PurchasedGenerator({
               </>
             )}
           </p>
-          {info.testMode && <p>🧪 Modo prueba local: el pago es simulado.</p>}
+          {info.testMode && (
+            <p>
+              <FlaskConical size={14} aria-hidden="true" /> Modo prueba local:
+              el pago es simulado.
+            </p>
+          )}
           <button
             type="button"
             className="btn btn-ghost btn-sm"
             onClick={onExit}
           >
-            ← Salir del generador
+            <ArrowLeft size={16} aria-hidden="true" /> Salir del creador
           </button>
         </footer>
       </div>
@@ -752,7 +818,8 @@ function AttachAudio({
   return (
     <div className="alert alert-info" style={{ marginTop: 12 }}>
       <p style={{ margin: 0 }}>
-        🎵 Tu compra usó un audio propio. Por privacidad no lo guardamos:{" "}
+        <Music size={16} aria-hidden="true" /> Tu compra usó un audio propio.
+        Por privacidad no lo guardamos:{" "}
         {attached
           ? "ya lo adjuntaste."
           : "volvé a subir el mismo archivo (MP3, WAV, M4A, AAC u OGG, máx. 5 MB)."}

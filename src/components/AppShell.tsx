@@ -18,11 +18,19 @@ import { track } from "../lib/analytics";
 import { ConsentBanner } from "./ConsentBanner";
 import { useSiteConfig } from "../state/SiteConfig";
 import { TEMPLATE_PATH, templateSeo, templateSlug } from "../lib/seo";
+import {
+  Check,
+  Info,
+  Music,
+  PartyPopper,
+  VolumeX,
+  WandSparkles,
+} from "lucide-react";
 
 const STEPS: { label: string; steps: Step[] }[] = [
-  { label: "Diseño y datos", steps: ["form"] },
-  { label: "Vista previa", steps: ["studio", "processing"] },
-  { label: "Compra", steps: ["offer", "generator"] },
+  { label: "Personalizar", steps: ["form"] },
+  { label: "Revisar", steps: ["studio", "processing"] },
+  { label: "Pagar", steps: ["offer", "generator"] },
 ];
 
 const MIN_PROCESSING_MS = 5000;
@@ -91,6 +99,56 @@ function ContinueBar({ name }: { name: string }) {
   );
 }
 
+/** Pregunta por el sonido antes de entrar a la vista previa: sin cierre por fuera, sin cruz ni Esc; hay que elegir una opción. */
+function SoundPrompt({ onChoose }: { onChoose: (sound: boolean) => void }) {
+  const first = useRef<HTMLButtonElement>(null);
+  const second = useRef<HTMLButtonElement>(null);
+  useEffect(() => first.current?.focus(), []);
+  const trap = (e: React.KeyboardEvent) => {
+    if (e.key === "Escape") e.preventDefault();
+    if (e.key !== "Tab") return;
+    const to = e.shiftKey ? second : first;
+    const from = e.shiftKey ? first : second;
+    if (document.activeElement === from.current) {
+      e.preventDefault();
+      to.current?.focus();
+    }
+  };
+  return (
+    <div className="modal-backdrop">
+      <div
+        className="modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="sound-title"
+        aria-describedby="sound-text"
+        onKeyDown={trap}
+      >
+        <h2 id="sound-title">¿Ponemos música?</h2>
+        <p id="sound-text">
+          Tenemos una canción preparada para esta invitación.
+        </p>
+        <button
+          ref={first}
+          type="button"
+          className="btn btn-primary btn-block"
+          onClick={() => onChoose(true)}
+        >
+          <Music size={18} aria-hidden="true" /> Sí, con música
+        </button>
+        <button
+          ref={second}
+          type="button"
+          className="btn btn-secondary btn-block"
+          onClick={() => onChoose(false)}
+        >
+          <VolumeX size={18} aria-hidden="true" /> Prefiero en silencio
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export function AppShell({
   intro,
 }: {
@@ -100,6 +158,8 @@ export function AppShell({
     useInvitation();
   const job = useExportJob();
   const { config } = useSiteConfig();
+  const [askSound, setAskSound] = useState(false);
+  const [studioSound, setStudioSound] = useState(false);
   const [purchaseId, setPurchaseId] = useState<string | null>(null);
   const [purchase, setPurchase] = useState<PurchaseInfo | null>(null);
   /** true solo al volver del pago de Mercado Pago: el generador arranca solo, una única vez */
@@ -220,8 +280,7 @@ export function AppShell({
         blob,
         templateId: template.id,
       });
-      goto("offer");
-      job.reset();
+      // la pantalla de proceso muestra "¡Tu video está listo!" y pasa a la oferta con su botón
     }
   };
 
@@ -243,12 +302,15 @@ export function AppShell({
           aria-label="Ir al inicio"
         >
           <span className="brand-mark" aria-hidden="true">
-            🎉
+            <PartyPopper size={22} />
           </span>
           AltaParty
         </button>
         {state.step === "studio" && (
-          <span className="hdr-note">ⓘ Podés cambiar los datos después</span>
+          <span className="hdr-note">
+            <Info size={14} aria-hidden="true" /> Podés cambiar los datos
+            después
+          </span>
         )}
         <nav aria-label="Progreso" className="wizard-nav">
           <p className="step-caption" aria-hidden="true">
@@ -264,7 +326,7 @@ export function AppShell({
                 aria-current={i === currentIdx ? "step" : undefined}
                 data-done={i < currentIdx ? "true" : undefined}
               >
-                <span className="num">{i < currentIdx ? "✓" : i + 1}</span>
+                <span className="num">{i < currentIdx ? <Check size={14} strokeWidth={3} aria-hidden="true" /> : i + 1}</span>
                 <span className="label">{s.label}</span>
               </li>
             ))}
@@ -294,7 +356,8 @@ export function AppShell({
                 {intro ? `${intro.text} ` : ""}
                 <span className="lead-long">
                   Elegí un diseño, personalizalo con tus datos y tu foto, cambiá
-                  la música y descargá un MP4 listo para compartir por WhatsApp.
+                  la música y descargá un video MP4 listo para compartir por
+                  WhatsApp.
                 </span>
                 <span className="lead-short">
                   Elegí un diseño y personalizalo con tus datos.
@@ -314,8 +377,12 @@ export function AppShell({
                     sale de tu dispositivo hasta que comprás.
                   </p>
                   <InvitationForm
-                    submitLabel="Ver mi invitación"
-                    onSubmit={() => goto("studio")}
+                    submitLabel="Personalizar mi invitación"
+                    submitIcon={<WandSparkles size={22} aria-hidden="true" />}
+                    onSubmit={() => {
+                      setAskSound(true);
+                      goto("studio");
+                    }}
                   />
                 </div>
               </aside>
@@ -334,6 +401,8 @@ export function AppShell({
 
         {state.step === "studio" && (
           <Studio
+            initialSound={studioSound}
+            hold={askSound}
             onGenerate={generatePreview}
             onGallery={() => goto("form")}
             generating={job.isRunning}
@@ -343,6 +412,11 @@ export function AppShell({
         {state.step === "processing" && (
           <ProcessingScreen
             job={job.state}
+            hasAudio={resolvedAudio.kind !== "none"}
+            onView={() => {
+              goto("offer");
+              job.reset();
+            }}
             onRetry={generatePreview}
             onCancel={cancelProcessing}
             onSkip={() => {
@@ -375,6 +449,14 @@ export function AppShell({
         )}
       </main>
 
+      {askSound && (
+        <SoundPrompt
+          onChoose={(on) => {
+            setStudioSound(on);
+            setAskSound(false);
+          }}
+        />
+      )}
       <ConsentBanner />
       <footer className="site-footer">
         <p>

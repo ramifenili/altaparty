@@ -15,8 +15,15 @@ import {
 } from "../client/purchases";
 import { exportFinal } from "../render/exporter";
 import { renderStill } from "../render/still";
-import { formatArs, hasImage, hasVideo, imagePromoPrice, videoPromoPrice } from "../config/pricing";
-import { StillPreview } from "./StillPreview";
+import {
+  formatArs,
+  hasImage,
+  hasVideo,
+  imagePromoPrice,
+  videoPromoPrice,
+} from "../config/pricing";
+import { PreviewTabs, StillPreview } from "./StillPreview";
+import { useIsAdmin } from "./AdminMlImages";
 import { PURCHASE_KEY } from "./OfferPanel";
 import { checkSupport, isMobileDevice } from "../render/engine";
 import { dataUrlToFile, validateAudioFile } from "../render/assets";
@@ -66,6 +73,7 @@ export function PurchasedGenerator({
   const PRICING = config.pricing;
   const template = getTemplate(info.templateId);
   const job = useExportJob();
+  const admin = useIsAdmin();
   const [error, setError] = useState<string | null>(null);
   const [finalUrl, setFinalUrl] = useState<string | null>(null);
   const [delivered, setDelivered] = useState(false);
@@ -82,11 +90,17 @@ export function PurchasedGenerator({
   // la imagen 1080×1920 (si la compra la incluye)
   const product = info.product ?? "video";
   // la imagen se entrega en PNG (sin pérdida) y también en JPG (más liviana)
-  const [imageUrls, setImageUrls] = useState<{ png: string; jpg: string } | null>(null);
+  const [imageUrls, setImageUrls] = useState<{
+    png: string;
+    jpg: string;
+  } | null>(null);
   const [imgBusy, setImgBusy] = useState(false);
   const imageRef = useRef<{ png: string; jpg: string } | null>(null);
   const imageTried = useRef(false);
   const [upsellBusy, setUpsellBusy] = useState(false);
+  const [view, setView] = useState<"video" | "image">(
+    hasVideo(product) ? "video" : "image",
+  );
   /** con datos guardados por el servidor, todo es de solo lectura */
   const locked = info.hasSnapshot;
 
@@ -98,10 +112,10 @@ export function PurchasedGenerator({
   const jobStatus = job.state.status;
   useEffect(() => {
     if (jobStatus === "running" || jobStatus === "error")
-      progressRef.current?.scrollIntoView({ block: "center" });
+      progressRef.current?.scrollIntoView({ block: "nearest" });
   }, [jobStatus]);
   useEffect(() => {
-    if (finalUrl) resultRef.current?.scrollIntoView({ block: "center" });
+    if (finalUrl) resultRef.current?.scrollIntoView({ block: "nearest" });
   }, [finalUrl]);
 
   // la plantilla de la compra es la única que se puede usar
@@ -164,14 +178,21 @@ export function PurchasedGenerator({
   /** Genera la imagen (PNG y JPG) 1080×1920 sin marca de agua (con autorización del servidor, igual que el video). */
   const generateImage = async () => {
     if (Object.keys(validateInvitation(state.data, new Date(0))).length) {
-      setError("Completá todos los datos obligatorios antes de generar la imagen.");
+      setError(
+        "Completá todos los datos obligatorios antes de generar la imagen.",
+      );
       return;
     }
     setError(null);
     setImgBusy(true);
     try {
-      const authorization = await requestFinalAuthorization(info.purchaseId, "image").catch((e) => {
-        throw new Error(e instanceof ApiError ? e.message : "No pudimos autorizar la imagen.");
+      const authorization = await requestFinalAuthorization(
+        info.purchaseId,
+        "image",
+      ).catch((e) => {
+        throw new Error(
+          e instanceof ApiError ? e.message : "No pudimos autorizar la imagen.",
+        );
       });
       await verifyAuthorizationWithServer(authorization);
       const blobs = await renderStill(template, content, { watermark: false });
@@ -183,9 +204,13 @@ export function PurchasedGenerator({
       imageRef.current = { png: url, jpg: URL.createObjectURL(blobs.jpg) };
       setImageUrls(imageRef.current);
       track("image_ready", { templateId: template.id });
-      markDelivered(authorization).then(() => setDelivered(true)).catch(() => setDelivered(true));
+      markDelivered(authorization)
+        .then(() => setDelivered(true))
+        .catch(() => setDelivered(true));
     } catch (e) {
-      setError(e instanceof Error ? e.message : "No pudimos generar la imagen.");
+      setError(
+        e instanceof Error ? e.message : "No pudimos generar la imagen.",
+      );
     } finally {
       setImgBusy(false);
     }
@@ -200,7 +225,8 @@ export function PurchasedGenerator({
 
   // la imagen se genera apenas se cargan los datos de la compra (no hace falta apretar nada): queda lista para descargar
   useEffect(() => {
-    if (!hasImage(product) || load !== "ready" || imageTried.current || !locked) return;
+    if (!hasImage(product) || load !== "ready" || imageTried.current || !locked)
+      return;
     imageTried.current = true;
     void generateImage();
   }); // eslint-disable-line react-hooks/exhaustive-deps
@@ -210,7 +236,12 @@ export function PurchasedGenerator({
     setUpsellBusy(true);
     setError(null);
     try {
-      const { purchaseId: id, checkoutUrl } = await createPurchase(info.templateId, undefined, product === "image" ? "video" : "image", info.purchaseId);
+      const { purchaseId: id, checkoutUrl } = await createPurchase(
+        info.templateId,
+        undefined,
+        product === "image" ? "video" : "image",
+        info.purchaseId,
+      );
       try {
         localStorage.setItem(PURCHASE_KEY, JSON.stringify({ purchaseId: id }));
       } catch {
@@ -218,7 +249,9 @@ export function PurchasedGenerator({
       }
       window.location.assign(checkoutUrl);
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : "No pudimos iniciar el pago.");
+      setError(
+        e instanceof ApiError ? e.message : "No pudimos iniciar el pago.",
+      );
       setUpsellBusy(false);
     }
   };
@@ -300,7 +333,14 @@ export function PurchasedGenerator({
 
   // al volver del pago genera solo, una única vez; recuperar una compra con el código no consume generaciones
   useEffect(() => {
-    if (!hasVideo(product) || !autoStart || autoRan.current || load !== "ready" || needAudio) return;
+    if (
+      !hasVideo(product) ||
+      !autoStart ||
+      autoRan.current ||
+      load !== "ready" ||
+      needAudio
+    )
+      return;
     if (info.remaining < PRICING.maxFinalRenders) return;
     autoRan.current = true;
     autoDownload.current = true;
@@ -311,89 +351,141 @@ export function PurchasedGenerator({
   const noMore = hasVideo(product) && info.remaining <= 0;
   const busy = job.isRunning || imgBusy;
   const d = state.data;
+  const fileBase = `invitacion-${slugify(content.name) || "cumple"}`;
+  const showImage =
+    product === "image" || (product === "both" && view === "image");
+  const title =
+    product === "image"
+      ? imageUrls
+        ? "Tu imagen está lista"
+        : "Preparando tu imagen…"
+      : product === "both"
+        ? "Tu video y tu imagen"
+        : finalUrl
+          ? "Tu video está listo"
+          : "Generá tu video final";
+  const chip = showImage
+    ? imageUrls
+      ? { ok: true, text: "Tu imagen está lista." }
+      : {
+          ok: false,
+          text: imgBusy ? "Generando tu imagen…" : "Tu compra está confirmada.",
+        }
+    : finalUrl
+      ? {
+          ok: true,
+          text: delivered
+            ? "Tu video está listo y la entrega quedó registrada."
+            : "Tu video está listo.",
+        }
+      : job.isRunning
+        ? { ok: false, text: "Generando tu video…" }
+        : load === "loading"
+          ? { ok: false, text: "Cargando los datos de tu compra…" }
+          : { ok: false, text: "Tu compra está confirmada." };
+  const showGenerate =
+    hasVideo(product) || (!imageUrls && !imgBusy && imageTried.current);
+  const generateLabel = noMore
+    ? "Sin generaciones disponibles"
+    : busy
+      ? "Generando tu video…"
+      : product === "image"
+        ? "Reintentar la imagen"
+        : finalUrl
+          ? "Generar de nuevo"
+          : "Generar mi video final";
 
   return (
-    <div className="studio">
-      <div className="studio-preview">
-        {load === "ready" && product === "image" ? (
-          imageUrls ? (
-            <div className="still-preview">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={imageUrls.png} alt="Tu invitación en imagen, sin marca de agua" style={{ width: "100%", maxWidth: 380, borderRadius: 16, display: "block", margin: "0 auto" }} />
-            </div>
-          ) : (
-            <StillPreview template={template} content={content} watermark={false} />
-          )
-        ) : load === "ready" ? (
-          <LivePreview clean />
-        ) : (
-          <p className="alert alert-info">Cargando los datos de tu compra…</p>
-        )}
-        {/* 
-        <p className="fine" style={{ textAlign: "center" }}>
-          Esta vista no lleva marca de agua porque tu compra está confirmada.
-        </p>
-				 */}
-      </div>
-      <div className="stack">
-        <div>
-          <p className="eyebrow">Compra confirmada ✅</p>
-          <h2 style={{ fontSize: "clamp(26px, 4.5vw, 36px)" }}>
-            {product === "image" ? (imageUrls ? "Tu imagen está lista" : "Preparando tu imagen…") : product === "both" ? "Tu video y tu imagen" : "Generá tu video final"}
-          </h2>
-          <p className="lead" style={{ fontSize: 15 }}>
-            Plantilla de tu compra: <strong>{template.name}</strong> 🔒.{" "}
-            {/* 
-            {locked
-              ? "Los datos de tu invitación están bloqueados: se genera exactamente la que compraste."
-              : "Podés completar los datos y la música; la plantilla no se puede cambiar."}
-							 */}
-          </p>
-          {info.testMode && (
-            <p className="alert alert-info" style={{ marginTop: 10 }}>
-              🧪 Modo prueba local: el pago es simulado. Esto no existe en el
-              sitio real.
-            </p>
-          )}
-          <p className="status-box" aria-live="polite">
-            {hasVideo(product) &&
-              `Generaciones del video disponibles: ${info.remaining} de ${PRICING.maxFinalRenders}. `}{" "}
-            <span className="fine" style={{ margin: 0 }}>
-              Código: <code>{info.purchaseId}</code>
+    <div className="final">
+      <section className="final-card final-media" aria-labelledby="final-title">
+        <h1 id="final-title" className="sr-only">
+          {title}
+        </h1>
+        <p
+          className={`final-chip${chip.ok ? " ok" : ""}`}
+          role="status"
+          aria-live="polite"
+        >
+          {chip.ok ? (
+            <span className="chip-ico" aria-hidden="true">
+              ✓
             </span>
-          </p>
-          {info.expiresAt && (
-            <p className="alert alert-info">
-              ⏳ Podés descargar tu video hasta el{" "}
-              <strong>{dateFmt(info.expiresAt)}</strong>.
-              {/* 
-							Después esta compra
-              vence y tus datos y tu foto se eliminan automáticamente de nuestro
-              servidor.
-							 */}
-            </p>
+          ) : busy ? (
+            <span className="spinner" aria-hidden="true" />
+          ) : null}
+          {chip.text}
+        </p>
+        {/* mientras se ve la vista en vivo, las pestañas Video | Imagen son las de esa vista */}
+        {product === "both" && (showImage || finalUrl) && (
+          <PreviewTabs mode={view} onChange={setView} />
+        )}
+        <div className="final-stage">
+          {load !== "ready" ? (
+            <p className="alert alert-info">Cargando los datos de tu compra…</p>
+          ) : showImage ? (
+            imageUrls ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                className="final-img"
+                src={imageUrls.png}
+                alt="Tu invitación en imagen, sin marca de agua"
+              />
+            ) : (
+              <StillPreview
+                template={template}
+                content={content}
+                watermark={false}
+              />
+            )
+          ) : finalUrl ? (
+            <video
+              className="final-video"
+              src={finalUrl}
+              controls
+              playsInline
+              aria-label="Tu video final sin marca de agua"
+              onLoadedMetadata={(e) =>
+                setDims(
+                  `${e.currentTarget.videoWidth}×${e.currentTarget.videoHeight}`,
+                )
+              }
+            />
+          ) : (
+            <LivePreview clean />
           )}
         </div>
+        <p className="final-cap">
+          {showImage
+            ? "Imagen vertical · 1080×1920"
+            : finalUrl
+              ? `Video MP4 vertical${dims ? ` · ${dims}` : ""}`
+              : "Vista previa en vivo, sin marca de agua"}
+        </p>
+      </section>
 
+      <div className="final-side">
+        <div className="final-col">
         {locked ? (
-          <section className="panel" aria-labelledby="gen-title">
-            <h3 id="gen-title">Tu invitación 🔒</h3>
-            <dl className="summary">
+          <section
+            className="final-card final-summary"
+            aria-labelledby="gen-title"
+          >
+            <h2 id="gen-title">
+              <span aria-hidden="true">⏳</span> Tu invitación{" "}
+              <span aria-hidden="true">🔒</span>
+            </h2>
+            <p className="final-sub">
+              Plantilla: <strong>{template.name}</strong>
+            </p>
+            <dl className="final-dl">
               <dt>Cumpleañero/a</dt>
               <dd>
                 {state.photo && (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
+                    className="final-avatar"
                     src={state.photo.previewUrl}
                     alt="Foto de tu compra"
-                    style={{
-                      width: 44,
-                      height: 44,
-                      borderRadius: "50%",
-                      objectFit: "cover",
-                      verticalAlign: "middle",
-                      marginRight: 8,
-                    }}
                   />
                 )}
                 {content.name}, {content.age} años
@@ -406,41 +498,18 @@ export function PurchasedGenerator({
               <dd>{content.venue}</dd>
               <dt>Dirección</dt>
               <dd>{content.address}</dd>
-              {/* <dt>Música</dt>
-							<dd>{resolvedAudio.kind === 'none' ? 'Sin sonido' : resolvedAudio.label}</dd> */}
             </dl>
-            <p className="hint">
-              Para cambiar algo hay que hacer una compra nueva.
-            </p>
             {needAudio && (
               <AttachAudio
                 onFile={setCustomAudio}
                 attached={resolvedAudio.kind === "file"}
               />
             )}
-            {(hasVideo(product) || (!imageUrls && !imgBusy && imageTried.current)) && (
-            <button
-              type="button"
-              className="btn btn-primary btn-block"
-              style={{ marginTop: 14 }}
-              disabled={busy || noMore || load !== "ready"}
-              onClick={() => void generate()}
-            >
-              {busy ? <span className="spinner" aria-hidden="true" /> : "🎬"}{" "}
-              {noMore
-                ? "Sin generaciones disponibles"
-                : busy
-                  ? "Generando…"
-                  : product === "image"
-                    ? "Reintentar la imagen"
-                    : "Generar mi video final"}
-            </button>
-            )}
           </section>
         ) : (
           <>
-            <section className="panel" aria-labelledby="gen-title">
-              <h3 id="gen-title">Tus datos</h3>
+            <section className="final-card" aria-labelledby="gen-title">
+              <h2 id="gen-title">Tus datos</h2>
               <InvitationForm
                 submitLabel={
                   noMore
@@ -458,14 +527,14 @@ export function PurchasedGenerator({
           </>
         )}
 
-        {error && (
-          <p className="alert alert-error" role="alert">
-            {error}
-          </p>
-        )}
-
+        </div>
+        <div className="final-col">
         {(job.state.status === "running" || job.state.status === "error") && (
-          <div className="panel" aria-busy={busy} ref={progressRef}>
+          <section
+            className="final-card final-progress"
+            aria-busy={busy}
+            ref={progressRef}
+          >
             {job.state.warning && (
               <p className="alert alert-info">{job.state.warning}</p>
             )}
@@ -477,135 +546,184 @@ export function PurchasedGenerator({
               <ProgressView
                 job={job.state}
                 finalLabel="Preparando tu descarga..."
+                title={hasVideo(product) ? "Generando tu video…" : "Generando…"}
               />
             )}
-          </div>
+            {admin && job.state.status === "running" && (
+              <button type="button" className="admin-chip" onClick={job.cancel}>
+                ⏭ Saltear generación (admin)
+              </button>
+            )}
+          </section>
         )}
 
-        {imageUrls && (
-          <div className="panel">
-            <p className="alert alert-ok">✅ Tu imagen está lista.</p>
-            {product === "both" && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={imageUrls.png}
-                alt="Tu invitación en imagen, sin marca de agua"
-                style={{ marginTop: 12, maxWidth: 240, width: "100%", borderRadius: 12 }}
-              />
-            )}
+        <section
+          className="final-card final-deliver"
+          aria-label="Descargas"
+          ref={resultRef}
+        >
+          {error && (
+            <p className="alert alert-error" role="alert">
+              {error}
+            </p>
+          )}
+          {finalUrl && (
             <a
               className="btn btn-primary btn-block btn-download"
-              style={{ marginTop: 12 }}
-              href={imageUrls.png}
-              download={`invitacion-${slugify(content.name) || "cumple"}.png`}
-              onClick={() => track("image_downloaded", { templateId: template.id })}
+              href={finalUrl}
+              download={`${fileBase}.mp4`}
+              onClick={() =>
+                track("video_downloaded", { templateId: template.id })
+              }
             >
-              <span aria-hidden="true">⬇</span> Descargar imagen PNG · 1080×1920
+              <span aria-hidden="true">⬇</span> Descargar video MP4
+              {dims ? ` · ${dims}` : ""}
             </a>
-            <a
-              className="btn btn-secondary btn-block"
-              style={{ marginTop: 8 }}
-              href={imageUrls.jpg}
-              download={`invitacion-${slugify(content.name) || "cumple"}.jpg`}
-              onClick={() => track("image_downloaded", { templateId: template.id })}
+          )}
+          {imageUrls && (
+            <div className={finalUrl ? "dl-row" : "dl-stack"}>
+              <a
+                className={`btn btn-block ${finalUrl ? "btn-secondary" : "btn-primary btn-download"}`}
+                href={imageUrls.png}
+                download={`${fileBase}.png`}
+                onClick={() =>
+                  track("image_downloaded", { templateId: template.id })
+                }
+              >
+                <span aria-hidden="true">⬇</span> Imagen PNG
+                {finalUrl ? "" : " · 1080×1920"}
+              </a>
+              <a
+                className="btn btn-secondary btn-block"
+                href={imageUrls.jpg}
+                download={`${fileBase}.jpg`}
+                onClick={() =>
+                  track("image_downloaded", { templateId: template.id })
+                }
+              >
+                <span aria-hidden="true">⬇</span>{" "}
+                {finalUrl ? "Imagen JPG" : "Descargar en JPG (más liviana)"}
+              </a>
+            </div>
+          )}
+          {showGenerate && (
+            <button
+              type="button"
+              className={`btn btn-block ${finalUrl ? "btn-ghost" : "btn-primary btn-download"}`}
+              disabled={busy || noMore || load !== "ready"}
+              onClick={() => void generate()}
             >
-              <span aria-hidden="true">⬇</span> Descargar en JPG (más liviana)
-            </a>
-          </div>
-        )}
+              {busy ? (
+                <span className="spinner" aria-hidden="true" />
+              ) : (
+                <span aria-hidden="true">{finalUrl ? "↻" : "🎬"}</span>
+              )}{" "}
+              {generateLabel}
+            </button>
+          )}
+          {!finalUrl && !imageUrls && !showGenerate && (
+            <p className="final-wait">Estamos preparando tus archivos…</p>
+          )}
+        </section>
 
-        {product === "image" && (
-          <div className="panel">
-            {info.videoPurchaseId ? (
+        {product !== "both" && (
+          <section className="final-upsell" aria-label="Completar la compra">
+            {product === "image" ? (
+              info.videoPurchaseId ? (
+                <>
+                  <span>🎬 Ya sumaste el video a tu compra.</span>
+                  <a
+                    className="btn btn-secondary btn-sm"
+                    href={`/?compra=${encodeURIComponent(info.videoPurchaseId)}`}
+                  >
+                    Ir a mi video
+                  </a>
+                </>
+              ) : (
+                <>
+                  <span>
+                    <strong>🎬 ¿Lo querés también en video?</strong> Sumalo por{" "}
+                    <strong>{formatArs(videoPromoPrice(PRICING))}</strong>{" "}
+                    <s>{formatArs(PRICING.price)}</s>
+                  </span>
+                  <button
+                    type="button"
+                    className="btn btn-secondary btn-sm"
+                    disabled={upsellBusy || !info.hasSnapshot}
+                    onClick={() => void addMissing()}
+                  >
+                    {upsellBusy ? (
+                      <span className="spinner" aria-hidden="true" />
+                    ) : (
+                      "Agregar"
+                    )}
+                  </button>
+                </>
+              )
+            ) : info.imagePurchaseId ? (
               <>
-                <p className="alert alert-ok">🎬 Ya sumaste el video a tu compra.</p>
-                <a className="btn btn-primary btn-block" style={{ marginTop: 10 }} href={`/?compra=${encodeURIComponent(info.videoPurchaseId)}`}>
-                  Ir a mi video
-                </a>
-              </>
-            ) : (
-              <>
-                <h3 style={{ marginTop: 0 }}>🎬 ¿Lo querés también en video?</h3>
-                <p className="fine" style={{ margin: "4px 0 10px" }}>
-                  Sumá el video MP4 de esta misma invitación a precio especial por haber comprado la imagen:{" "}
-                  <strong>{formatArs(videoPromoPrice(PRICING))}</strong>{" "}
-                  <span style={{ textDecoration: "line-through", opacity: 0.7 }}>{formatArs(PRICING.price)}</span>.
-                </p>
-                <button type="button" className="btn btn-secondary btn-block" disabled={upsellBusy || !info.hasSnapshot} onClick={() => void addMissing()}>
-                  {upsellBusy ? <span className="spinner" aria-hidden="true" /> : "🎬"} Agregar el video por {formatArs(videoPromoPrice(PRICING))}
-                </button>
-              </>
-            )}
-          </div>
-        )}
-
-        {product === "video" && (
-          <div className="panel">
-            {info.imagePurchaseId ? (
-              <>
-                <p className="alert alert-ok">🖼 Ya sumaste la imagen a tu compra.</p>
-                <a className="btn btn-primary btn-block" style={{ marginTop: 10 }} href={`/?compra=${encodeURIComponent(info.imagePurchaseId)}`}>
+                <span>🖼 Ya sumaste la imagen a tu compra.</span>
+                <a
+                  className="btn btn-secondary btn-sm"
+                  href={`/?compra=${encodeURIComponent(info.imagePurchaseId)}`}
+                >
                   Ir a mi imagen
                 </a>
               </>
             ) : (
               <>
-                <h3 style={{ marginTop: 0 }}>🖼 ¿La querés también en imagen?</h3>
-                <p className="fine" style={{ margin: "4px 0 10px" }}>
-                  Sumá la imagen 1080×1920 (PNG y JPG) de esta misma invitación a precio especial por haber comprado el video:{" "}
+                <span>
+                  <strong>🖼 ¿La querés también en imagen?</strong> PNG y JPG
+                  1080×1920 por{" "}
                   <strong>{formatArs(imagePromoPrice(PRICING))}</strong>{" "}
-                  <span style={{ textDecoration: "line-through", opacity: 0.7 }}>{formatArs(PRICING.imagePrice)}</span>.
-                </p>
-                <button type="button" className="btn btn-secondary btn-block" disabled={upsellBusy || !info.hasSnapshot} onClick={() => void addMissing()}>
-                  {upsellBusy ? <span className="spinner" aria-hidden="true" /> : "🖼"} Agregar la imagen por {formatArs(imagePromoPrice(PRICING))}
+                  <s>{formatArs(PRICING.imagePrice)}</s>
+                </span>
+                <button
+                  type="button"
+                  className="btn btn-secondary btn-sm"
+                  disabled={upsellBusy || !info.hasSnapshot}
+                  onClick={() => void addMissing()}
+                >
+                  {upsellBusy ? (
+                    <span className="spinner" aria-hidden="true" />
+                  ) : (
+                    "Agregar"
+                  )}
                 </button>
               </>
             )}
-          </div>
+          </section>
         )}
 
-        {finalUrl && (
-          <div className="panel" ref={resultRef}>
-            <p className="alert alert-ok">
-              ✅ Tu video está listo
-              {delivered ? " y la entrega quedó registrada" : ""}.
-            </p>
-            <video
-              src={finalUrl}
-              controls
-              playsInline
-              style={{ marginTop: 12, maxWidth: 320 }}
-              aria-label="Tu video final sin marca de agua"
-              onLoadedMetadata={(e) =>
-                setDims(
-                  `${e.currentTarget.videoWidth}×${e.currentTarget.videoHeight}`,
-                )
-              }
-            />
-            <a
-              className="btn btn-primary btn-block btn-download"
-              style={{ marginTop: 12 }}
-              href={finalUrl}
-              download={`invitacion-${slugify(content.name) || "cumple"}.mp4`}
-              onClick={() => track("video_downloaded", { templateId: template.id })}
-            >
-              <span aria-hidden="true">⬇</span> Descargar MP4
-              {dims ? ` · ${dims}` : ""}
-            </a>
-            {/* 
-            <p className="fine">
-              Si la descarga no empezó sola, tocá el botón. En celular, si no se
-              descarga, mantené apretado el video y guardalo. Guardá tu código
-              de compra: te sirve para volver a este generador hasta el
-              vencimiento.
-            </p>
-						 */}
-          </div>
-        )}
-
-        <button type="button" className="btn btn-ghost" onClick={onExit}>
-          ← Salir del generador
-        </button>
+        </div>
+        <footer className="final-meta">
+          <p>
+            <span aria-hidden="true">✅</span> Compra confirmada · Código{" "}
+            <code>{info.purchaseId}</code>
+            {hasVideo(product) && (
+              <>
+                {" "}
+                · Generaciones del video: {info.remaining} de{" "}
+                {PRICING.maxFinalRenders}
+              </>
+            )}
+            {info.expiresAt && (
+              <>
+                {" "}
+                · Podés descargar hasta el{" "}
+                <strong>{dateFmt(info.expiresAt)}</strong>
+              </>
+            )}
+          </p>
+          {info.testMode && <p>🧪 Modo prueba local: el pago es simulado.</p>}
+          <button
+            type="button"
+            className="btn btn-ghost btn-sm"
+            onClick={onExit}
+          >
+            ← Salir del generador
+          </button>
+        </footer>
       </div>
     </div>
   );

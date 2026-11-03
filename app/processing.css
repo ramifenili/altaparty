@@ -1,0 +1,737 @@
+/* =====================================================================
+   Procesando: la invitación se transforma en video (animación por etapa).
+   Todo es decorativo (transform/opacity) y nunca toca el render del MP4.
+   Se importa después de globals.css para ganar la cascada.
+   ===================================================================== */
+.pv-stage {
+  position: relative;
+  --pv-violet: #8b5cf6;
+  --pv-pink: #ec4899;
+  --pv-lime: var(--wise-lime, #9fe870);
+  display: grid;
+  place-items: center;
+  padding: 14px 22px;
+}
+
+.pv-float {
+  position: relative;
+  display: grid;
+  animation: pv-float 5s ease-in-out infinite;
+}
+
+.pv-thumb {
+  position: relative;
+  z-index: 1;
+  animation: pv-in 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  box-shadow: 0 18px 44px rgba(22, 51, 0, 0.18);
+}
+
+.pv-thumb::after {
+  display: none;
+}
+
+.pv-info {
+  width: 100%;
+  display: grid;
+  gap: 12px;
+  justify-items: center;
+}
+
+.pv-title {
+  font-size: clamp(22px, 2.6vw, 28px);
+  color: var(--wise-forest);
+  text-wrap: balance;
+}
+
+.pv-sub {
+  margin: 0;
+  max-width: 44ch;
+  color: var(--wise-grey);
+  text-wrap: balance;
+}
+
+.pv-pct {
+  margin: 0;
+}
+
+.pv-swap {
+  display: inline-block;
+  animation: pv-swap 0.45s ease both;
+}
+
+/* halo violeta (etapas de efectos y video) */
+.pv-halo {
+  position: absolute;
+  inset: -18%;
+  border-radius: 40%;
+  background: radial-gradient(
+    closest-side,
+    rgba(139, 92, 246, 0.42),
+    rgba(236, 72, 153, 0.14) 60%,
+    transparent
+  );
+  opacity: 0;
+  transition: opacity 0.6s ease;
+  animation: pv-breathe 3.2s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.pv-stage[data-phase="frames"] .pv-halo,
+.pv-stage[data-phase="audio"] .pv-halo,
+.pv-stage[data-phase="encode"] .pv-halo {
+  opacity: 0.9;
+}
+
+.pv-stage[data-phase="done"] .pv-halo {
+  opacity: 0.7;
+}
+
+/* barrido de luz violeta */
+.pv-sweep {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background: linear-gradient(
+    105deg,
+    transparent 35%,
+    rgba(167, 139, 250, 0.5) 50%,
+    transparent 65%
+  );
+  transform: translateX(-120%);
+  animation: pv-sweep 3.4s ease-in-out infinite;
+}
+
+.pv-stage[data-phase="encode"] .pv-sweep,
+.pv-stage[data-phase="done"] .pv-sweep {
+  display: none;
+}
+
+/* línea de luz que baja por la imagen (creando MP4) */
+.pv-scan {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 3px;
+  z-index: 2;
+  display: none;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    #fff,
+    var(--pv-lime),
+    transparent
+  );
+  box-shadow:
+    0 0 14px 4px rgba(139, 92, 246, 0.65),
+    0 0 30px 10px rgba(139, 92, 246, 0.3);
+  animation: pv-scan 2.4s linear infinite;
+}
+
+.pv-stage[data-phase="encode"][data-sharp="on"] .pv-scan {
+  display: block;
+}
+
+/* marco luminoso */
+.pv-frame {
+  position: absolute;
+  inset: -7px;
+  z-index: 0;
+  border-radius: 20px;
+  border: 2px solid var(--pv-lime);
+  box-shadow:
+    0 0 18px rgba(139, 92, 246, 0.55),
+    inset 0 0 14px rgba(139, 92, 246, 0.25);
+  opacity: 0;
+  transition: opacity 0.5s ease;
+  animation: pv-breathe 2.4s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.pv-stage[data-phase="encode"][data-sharp="on"] .pv-frame,
+.pv-stage[data-state="done"] .pv-frame {
+  opacity: 1;
+}
+
+/* destellos */
+.pv-spark {
+  position: absolute;
+  z-index: 3;
+  width: 14px;
+  height: 14px;
+  margin: -7px 0 0 -7px;
+  opacity: 0;
+  pointer-events: none;
+  background: var(--pv-violet);
+  clip-path: polygon(
+    50% 0,
+    62% 38%,
+    100% 50%,
+    62% 62%,
+    50% 100%,
+    38% 62%,
+    0 50%,
+    38% 38%
+  );
+  animation: pv-spark 3.6s ease-in-out infinite;
+}
+
+.pv-spark:nth-of-type(even) {
+  background: var(--pv-pink);
+}
+
+/* en la primera etapa solo unos pocos; después, ocasionales */
+.pv-stage[data-phase="prepare"] .pv-spark:nth-of-type(n + 4) {
+  display: none;
+}
+
+.pv-stage[data-phase="finish"] .pv-spark {
+  animation-duration: 5s;
+}
+
+/* ondas de sonido (solo si hay música) */
+.pv-waves {
+  position: absolute;
+  inset: 0;
+  display: none;
+  pointer-events: none;
+}
+
+.pv-stage[data-phase="audio"][data-audio="on"] .pv-waves {
+  display: block;
+}
+
+.pv-waves i {
+  position: absolute;
+  inset: -4px;
+  border-radius: 20px;
+  border: 2px solid var(--pv-violet);
+  opacity: 0;
+  animation: pv-wave 2.4s ease-out infinite;
+}
+
+.pv-waves i:nth-child(2) {
+  animation-delay: 0.8s;
+  border-color: var(--pv-pink);
+}
+
+.pv-waves i:nth-child(3) {
+  animation-delay: 1.6s;
+}
+
+/* insignias: nota musical y MP4 */
+.pv-badge {
+  position: absolute;
+  z-index: 4;
+  display: none;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: var(--wise-forest);
+  color: var(--wise-lime);
+  font-size: 12px;
+  font-weight: 800;
+  box-shadow: 0 6px 16px rgba(22, 51, 0, 0.25);
+}
+
+.pv-badge-music {
+  right: -14px;
+  top: 14%;
+  padding: 8px;
+  background: var(--pv-violet);
+  color: #fff;
+  animation: pv-pulse 0.9s ease-in-out infinite;
+}
+
+.pv-badge-mp4 {
+  position: static;
+  animation: pv-swap 0.45s ease both;
+}
+
+/* píldoras de abajo: porcentaje real con aro + MP4, una al lado de la otra */
+.pv-badges {
+  position: absolute;
+  left: 50%;
+  bottom: -6px;
+  z-index: 4;
+  display: flex;
+  gap: 6px;
+  white-space: nowrap;
+  transform: translateX(-50%);
+}
+
+.pv-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 11px 4px 5px;
+  border-radius: 999px;
+  background: var(--wise-forest);
+  color: var(--wise-lime);
+  font-size: 12px;
+  box-shadow: 0 6px 16px rgba(22, 51, 0, 0.25);
+}
+
+.pv-pill b {
+  min-width: 3ch;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.pv-pill svg {
+  transform: rotate(-90deg);
+}
+
+.pv-pill circle {
+  fill: none;
+  stroke-width: 3;
+}
+
+.pv-ring-bg {
+  stroke: rgba(159, 232, 112, 0.25);
+}
+
+.pv-ring {
+  stroke: var(--wise-lime);
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.4s linear;
+}
+
+.pv-stage:has(.pv-pill) .pv-badge-mp4,
+.pv-stage[data-phase="audio"][data-audio="on"] .pv-badge-music,
+.pv-stage[data-phase="encode"] .pv-badge-mp4,
+.pv-stage[data-state="done"] .pv-badge-mp4 {
+  display: inline-flex;
+}
+
+/* video listo: zoom suave + confeti */
+.pv-stage[data-state="done"] .pv-thumb {
+  animation: pv-pop 0.6s cubic-bezier(0.2, 1.2, 0.3, 1) both;
+}
+
+.pv-stage[data-state="done"] .pv-float {
+  animation: none;
+}
+
+.pv-stage[data-state="done"] .pv-spark {
+  animation-duration: 2.2s;
+}
+
+.pv-confetti {
+  position: absolute;
+  left: 50%;
+  top: 45%;
+  z-index: 5;
+  pointer-events: none;
+}
+
+.pv-confetti i {
+  position: absolute;
+  width: 8px;
+  height: 12px;
+  margin: -6px 0 0 -4px;
+  border-radius: 2px;
+  opacity: 0;
+  animation: pv-confetti 1.5s cubic-bezier(0.1, 0.7, 0.3, 1) both;
+}
+
+.pv-confetti i:nth-child(3n) {
+  height: 8px;
+  border-radius: 50%;
+}
+
+.pv-cta {
+  margin-top: 6px;
+  animation: pv-swap 0.5s 0.2s ease both;
+}
+
+/* lista de etapas: aro verde giratorio y check lima */
+.check-list li[data-state="active"] .cs {
+  border-color: #4cb022;
+  border-top-color: transparent;
+  animation: spin 0.9s linear infinite;
+}
+
+.check-list li[data-state="active"] .ci {
+  background: var(--wise-lime-soft);
+  color: var(--wise-forest);
+}
+
+.check-list li[data-state="done"] .cs {
+  background: var(--wise-forest);
+  color: var(--wise-lime);
+  animation: pv-pop 0.4s ease both;
+}
+
+.check-list li[data-state="done"] .ci {
+  background: var(--wise-lime);
+  color: var(--wise-forest);
+}
+
+.progress > div {
+  background: linear-gradient(90deg, var(--wise-forest), #4cb022);
+}
+
+@media (max-width: 959px) {
+  .pv-stage {
+    padding: 10px 18px;
+  }
+
+  .pv-info {
+    gap: 8px;
+  }
+
+  .pv-sub {
+    font-size: 14px;
+  }
+
+  .processing-side .eta {
+    font-size: 12px;
+  }
+}
+
+@keyframes pv-float {
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+@keyframes pv-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+}
+
+@keyframes pv-pop {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.06);
+  }
+  100% {
+    transform: scale(1.03);
+  }
+}
+
+@keyframes pv-swap {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+@keyframes pv-breathe {
+  50% {
+    transform: scale(1.04);
+    filter: brightness(1.15);
+  }
+}
+
+@keyframes pv-pulse {
+  50% {
+    transform: scale(1.18);
+  }
+}
+
+@keyframes pv-sweep {
+  0% {
+    transform: translateX(-120%);
+  }
+  45%,
+  100% {
+    transform: translateX(120%);
+  }
+}
+
+@keyframes pv-scan {
+  from {
+    top: 0;
+  }
+  to {
+    top: calc(100% - 3px);
+  }
+}
+
+@keyframes pv-spark {
+  0%,
+  100% {
+    opacity: 0;
+    transform: scale(0.3) rotate(0);
+  }
+  40% {
+    opacity: 1;
+    transform: scale(1) rotate(45deg);
+  }
+  70% {
+    opacity: 0;
+    transform: scale(0.5) rotate(90deg);
+  }
+}
+
+@keyframes pv-wave {
+  0% {
+    opacity: 0.7;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.22, 1.14);
+  }
+}
+
+@keyframes pv-confetti {
+  0% {
+    opacity: 1;
+    transform: rotate(var(--a)) translateY(0) rotate(0);
+  }
+  100% {
+    opacity: 0;
+    transform: rotate(var(--a)) translateY(calc(var(--dist) * -1))
+      rotate(260deg);
+  }
+}
+
+/* en el generador final la escena ocupa el lugar del video */
+.final-stage .pv-stage {
+  padding: 8px 22px;
+}
+
+.final-stage .pv-thumb {
+  width: auto;
+  height: calc(var(--stage-h) - 70px);
+  aspect-ratio: 9 / 16;
+}
+
+/* Materialización: la invitación nace de manchas de color con la paleta de la
+   plantilla. Es puramente visual (CSS en el navegador), por tiempo, y el canvas
+   de abajo sigue dibujándose normal. Juega ~1.3 s y se va revelando hasta ~4.2 s. */
+/* --pv-p (0..1) lo fija el componente a partir del progreso real: se revela
+   hasta casi la mitad de "Animaciones y efectos". La transición lo suaviza. */
+@property --pv-p {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0;
+}
+
+.pv-thumb {
+  transition:
+    --pv-p 1.2s linear,
+    --pv-f 0.9s linear;
+}
+
+.pv-mat {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  overflow: hidden;
+  pointer-events: none;
+  background:
+    radial-gradient(
+      120% 90% at 20% 10%,
+      color-mix(in srgb, var(--m1) 70%, transparent),
+      transparent 60%
+    ),
+    radial-gradient(
+      120% 90% at 85% 90%,
+      color-mix(in srgb, var(--m2) 70%, transparent),
+      transparent 60%
+    ),
+    linear-gradient(160deg, var(--m0), var(--m3));
+  --pv-r: calc(var(--pv-p) * 120%);
+  -webkit-mask-image: radial-gradient(
+    circle at 50% 50%,
+    transparent var(--pv-r),
+    #000 calc(var(--pv-r) + 22%)
+  );
+  mask-image: radial-gradient(
+    circle at 50% 50%,
+    transparent var(--pv-r),
+    #000 calc(var(--pv-r) + 22%)
+  );
+  opacity: clamp(0, calc((1 - var(--pv-p)) * 7), 1);
+}
+
+.pv-mat i {
+  position: absolute;
+  width: 70%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  left: 15%;
+  top: 22%;
+  opacity: 0.9;
+  background: radial-gradient(circle, var(--c) 0%, transparent 68%);
+  /* se van juntando al centro y achicando a medida que avanza el progreso real */
+  translate: calc(var(--x) * (1 - var(--pv-p)))
+    calc(var(--y) * (1 - var(--pv-p)));
+  scale: calc(1 - var(--pv-p) * 0.6);
+  animation: pv-orb 5s ease-in-out infinite alternate;
+}
+
+.pv-mat i:nth-child(1) {
+  --c: var(--m1);
+  --x: -60%;
+  --y: -50%;
+}
+.pv-mat i:nth-child(2) {
+  --c: var(--m2);
+  --x: 60%;
+  --y: -30%;
+  animation-delay: 0.15s;
+}
+.pv-mat i:nth-child(3) {
+  --c: var(--m3);
+  --x: -50%;
+  --y: 60%;
+  animation-delay: 0.3s;
+}
+.pv-mat i:nth-child(4) {
+  --c: var(--m0);
+  --x: 55%;
+  --y: 55%;
+  animation-delay: 0.45s;
+}
+
+/* la invitación pasa de borrosa y saturada a nítida a medida que se revela */
+.pv-thumb canvas:not(.pv-pix) {
+  filter: blur(calc(14px * (1 - var(--pv-p))))
+    saturate(calc(1 + 0.8 * (1 - var(--pv-p))));
+  scale: calc(1 + 0.08 * (1 - var(--pv-p)));
+}
+
+/* las manchas bailan por la imagen mientras esperan el avance */
+@keyframes pv-orb {
+  to {
+    transform: translate(18%, -14%) rotate(50deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pv-mat {
+    display: none;
+  }
+
+  .pv-thumb canvas:not(.pv-pix) {
+    filter: none;
+    scale: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pv-float,
+  .pv-thumb,
+  .pv-halo,
+  .pv-sweep,
+  .pv-scan,
+  .pv-frame,
+  .pv-spark,
+  .pv-waves i,
+  .pv-badge,
+  .pv-swap,
+  .pv-cta,
+  .check-list li .cs {
+    animation: none !important;
+  }
+
+  .pv-sweep,
+  .pv-spark,
+  .pv-confetti {
+    display: none;
+  }
+
+  .pv-scan {
+    top: 50%;
+  }
+}
+
+/* mosaico (se dibuja por JS): el lienzo es más grande que la caja del video, así los bloques salen de ella */
+.pv-pix {
+  position: absolute;
+  z-index: 3;
+  image-rendering: pixelated;
+  pointer-events: none;
+}
+
+.pv-pix[hidden] {
+  display: none;
+}
+
+/* borde difuso: con --pv-f = 1 los bordes de la invitación se funden con el exterior; en 0 queda nítida */
+@property --pv-f {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0;
+}
+
+.pv-inner {
+  position: absolute;
+  inset: 0;
+  -webkit-mask-image:
+    linear-gradient(to right, transparent, #000 calc(var(--pv-f) * 22%), #000 calc(100% - var(--pv-f) * 22%), transparent),
+    linear-gradient(to bottom, transparent, #000 calc(var(--pv-f) * 14%), #000 calc(100% - var(--pv-f) * 14%), transparent);
+  -webkit-mask-composite: source-in;
+  mask-image:
+    linear-gradient(to right, transparent, #000 calc(var(--pv-f) * 22%), #000 calc(100% - var(--pv-f) * 22%), transparent),
+    linear-gradient(to bottom, transparent, #000 calc(var(--pv-f) * 14%), #000 calc(100% - var(--pv-f) * 14%), transparent);
+  mask-composite: intersect;
+}
+
+/* el redondeo del borde se va aplicando a medida que el difuminado se cierra (12px = --r-media) */
+.pv-thumb {
+  border-radius: calc(12px * (1 - var(--pv-f)));
+}
+
+/* la sombra también se apaga mientras el borde es difuso */
+.pv-thumb {
+  box-shadow: 0 18px 44px rgba(22, 51, 0, calc(0.18 * (1 - var(--pv-f))));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pv-inner {
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+}
+
+/* aura de color que se asoma por fuera de la caja durante el desenfoque */
+@property --pv-a {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0;
+}
+
+.pv-float {
+  transition: --pv-a 0.9s linear;
+}
+
+.pv-aura {
+  position: absolute;
+  inset: -9% -22%;
+  z-index: 0;
+  pointer-events: none;
+  opacity: var(--pv-a);
+  scale: calc(0.82 + 0.18 * var(--pv-a));
+  filter: blur(22px);
+  background:
+    radial-gradient(40% 30% at 12% 22%, var(--m1), transparent 70%),
+    radial-gradient(42% 32% at 90% 30%, var(--m2), transparent 70%),
+    radial-gradient(40% 30% at 18% 86%, var(--m3), transparent 70%),
+    radial-gradient(42% 30% at 86% 82%, var(--m0), transparent 70%);
+  animation: pv-aura 6s ease-in-out infinite alternate;
+}
+
+@keyframes pv-aura {
+  to {
+    transform: rotate(8deg) scale(1.06);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pv-aura {
+    display: none;
+  }
+}

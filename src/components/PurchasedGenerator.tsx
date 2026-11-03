@@ -217,10 +217,17 @@ export function PurchasedGenerator({
   };
 
   /** Genera lo que incluye la compra. La imagen sale sola al abrir el generador; el botón genera el video. */
+  const generateLock = useRef(false);
   const generate = async () => {
-    if (!hasVideo(product)) return generateImage();
-    await generateVideo();
-    if (hasImage(product) && !imageRef.current) await generateImage();
+    if (generateLock.current) return;
+    generateLock.current = true;
+    try {
+      if (!hasVideo(product)) return await generateImage();
+      await generateVideo();
+      if (hasImage(product) && !imageRef.current) await generateImage();
+    } finally {
+      generateLock.current = false;
+    }
   };
 
   // la imagen se genera apenas se cargan los datos de la compra (no hace falta apretar nada): queda lista para descargar
@@ -232,7 +239,10 @@ export function PurchasedGenerator({
   }); // eslint-disable-line react-hooks/exhaustive-deps
 
   /** Una compra de solo imagen puede sumar el video con descuento (compra nueva con los mismos datos). */
+  const upsellLock = useRef(false);
   const addMissing = async () => {
+    if (upsellLock.current) return;
+    upsellLock.current = true;
     setUpsellBusy(true);
     setError(null);
     try {
@@ -252,6 +262,7 @@ export function PurchasedGenerator({
       setError(
         e instanceof ApiError ? e.message : "No pudimos iniciar el pago.",
       );
+      upsellLock.current = false;
       setUpsellBusy(false);
     }
   };

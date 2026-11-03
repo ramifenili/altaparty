@@ -1,6 +1,6 @@
 'use client';
 
-import React, {useState} from 'react';
+import React, {useRef, useState} from 'react';
 import {ApiError, fetchPurchase, type PurchaseInfo} from '../client/purchases';
 import {PURCHASE_KEY} from './OfferPanel';
 
@@ -10,10 +10,13 @@ export function RecoverPurchase({onFound, open}: {onFound: (info: PurchaseInfo) 
 	const [error, setError] = useState<string | null>(null);
 	const [busy, setBusy] = useState(false);
 
+	const lock = useRef(false);
 	const submit = async (e: React.FormEvent) => {
 		e.preventDefault();
 		const value = code.trim();
 		if (!value) return setError('Pegá el código de compra que recibiste.');
+		if (lock.current) return;
+		lock.current = true;
 		setBusy(true);
 		setError(null);
 		try {
@@ -33,6 +36,7 @@ export function RecoverPurchase({onFound, open}: {onFound: (info: PurchaseInfo) 
 		} catch (err) {
 			setError(err instanceof ApiError ? err.message : 'No pudimos verificar el código.');
 		} finally {
+			lock.current = false;
 			setBusy(false);
 		}
 	};

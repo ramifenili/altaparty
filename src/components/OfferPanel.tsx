@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useInvitation } from "../state/InvitationProvider";
 import {
   formatArs,
@@ -157,8 +157,10 @@ export function OfferPanel({
   const [previewMode, setPreviewMode] = useState<"video" | "image">("video");
   const amount = priceOf(product, PRICING);
 
+  const refreshLock = useRef(false);
   const refresh = useCallback(async () => {
-    if (!purchaseId) return;
+    if (!purchaseId || refreshLock.current) return;
+    refreshLock.current = true;
     setLoadingStatus(true);
     try {
       const p = await fetchPurchase(purchaseId);
@@ -170,6 +172,7 @@ export function OfferPanel({
         e instanceof ApiError ? e.message : "No pudimos verificar el pago.",
       );
     } finally {
+      refreshLock.current = false;
       setLoadingStatus(false);
     }
   }, [purchaseId, onApproved]);
@@ -186,7 +189,18 @@ export function OfferPanel({
     return () => clearInterval(id);
   }, [purchaseId, info, refresh]);
 
+  // evita doble clic: mientras una consulta está en curso, los clics extra se ignoran
+  const buyLock = useRef(false);
   const buy = async () => {
+    if (buyLock.current) return;
+    buyLock.current = true;
+    try {
+      await runBuy();
+    } finally {
+      buyLock.current = false;
+    }
+  };
+  const runBuy = async () => {
     track("buy_click", { templateId: state.templateId });
     setBuying(true);
     setError(null);

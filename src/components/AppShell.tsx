@@ -174,7 +174,17 @@ export function AppShell({
     window.scrollTo({ top: 0 });
   }, [state.step]);
 
+  const previewLock = useRef(false);
   const generatePreview = async () => {
+    if (previewLock.current) return;
+    previewLock.current = true;
+    try {
+      await runPreview();
+    } finally {
+      previewLock.current = false;
+    }
+  };
+  const runPreview = async () => {
     const sup = checkSupport();
     track("preview_started", { templateId: template.id });
     // una compra nueva nunca hereda el código de una anterior (otra plantilla = otra compra)

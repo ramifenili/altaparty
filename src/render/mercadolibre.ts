@@ -538,7 +538,7 @@ export async function renderMercadoLibre(
   canvas.width = ML_SIZE;
   canvas.height = ML_SIZE;
   const ctx = canvas.getContext("2d");
-  if (!ctx) throw new Error("Tu navegador no permite generar la imagen.");
+  if (!ctx) throw new Error("Tu navegador no permite crear la imagen.");
   const st = template.ml ?? genericStyle(template);
   if (variant === "datos") drawDatos(ctx, template, st);
   else drawPasos(ctx, template, st);
@@ -546,7 +546,7 @@ export async function renderMercadoLibre(
   return new Promise<Blob>((resolve, reject) =>
     canvas.toBlob(
       (b) =>
-        b ? resolve(b) : reject(new Error("No pudimos generar la imagen.")),
+        b ? resolve(b) : reject(new Error("No pudimos crear la imagen.")),
       "image/png",
     ),
   );

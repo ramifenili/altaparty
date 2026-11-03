@@ -11,6 +11,7 @@ import { CompiledMedia } from "../render/mediaAccess";
 import { formatDuration } from "../audio/library";
 import { PreviewTabs, StillPreview } from "./StillPreview";
 import { MlImages, useIsAdmin } from "./AdminMlImages";
+import { Volume2, VolumeX } from "lucide-react";
 
 /** Mismos tiempos que el exportador (afade en render/engine.ts): entrada corta y salida de 1,2 s al final. */
 const FADE_IN = 0.15;
@@ -31,12 +32,18 @@ export function LivePreview({
   clean = false,
   sample = false,
   arrows,
+  hold = false,
+  initialSound = false,
 }: {
   /** flechas para pasar al diseño anterior / siguiente (solo en el estudio) */
   arrows?: { onPrev: () => void; onNext: () => void };
   clean?: boolean;
   /** muestra datos de ejemplo donde todavía no se cargó nada (entrada directa a una plantilla) */
   sample?: boolean;
+  /** mientras sea true el video queda en pausa (se está eligiendo si suena); al soltarse arranca solo */
+  hold?: boolean;
+  /** si al soltarse el video arranca con sonido */
+  initialSound?: boolean;
 }) {
   const { state, template, content: realContent, resolvedAudio } = useInvitation();
   const photo = state.photo?.canvas ?? null;
@@ -52,8 +59,19 @@ export function LivePreview({
   const [ready, setReady] = useState(false);
   const [time, setTime] = useState(0);
   const shown = useRef(0);
-  const [playing, setPlaying] = useState(true);
+  const [playing, setPlaying] = useState(!hold);
   const [sound, setSound] = useState(false);
+  const wasHeld = useRef(hold);
+  useEffect(() => {
+    if (hold) {
+      wasHeld.current = true;
+      return;
+    }
+    if (!wasHeld.current) return;
+    wasHeld.current = false;
+    setPlaying(true);
+    setSound(initialSound);
+  }, [hold, initialSound]);
   const [audioError, setAudioError] = useState(false);
   // además del video, se puede ver la imagen 1080×1920 que sale de la misma plantilla
   const [mode, setMode] = useState<"video" | "image" | "ml">("video");
@@ -120,7 +138,10 @@ export function LivePreview({
         clock.current,
         Math.max(0, (a.duration || template.duration) - 0.05),
       );
-      a.play().catch(() => setSound(false));
+      a.play().catch((e) => {
+        // una interrupción (cambio de pista, pausa) no es un rechazo del navegador: el sonido sigue elegido
+        if (e?.name !== "AbortError") setSound(false);
+      });
     } else {
       a.pause();
     }
@@ -313,10 +334,10 @@ export function LivePreview({
           aria-pressed={sound}
         >
           {!hasAudio
-            ? "🔇 Video silenciado"
+            ? <><VolumeX size={16} aria-hidden="true" /> Video silenciado</>
             : sound
-              ? "🔇 Desactivar sonido"
-              : "🔊 Activar sonido"}
+              ? <><VolumeX size={16} aria-hidden="true" /> Desactivar sonido</>
+              : <><Volume2 size={16} aria-hidden="true" /> Activar sonido</>}
         </button>
       </div>
       {audioError && (

@@ -1,29 +1,31 @@
 import type { Metadata } from "next";
 import { Mascot } from "../../src/components/landing/Mascots";
 import { Banner } from "../../src/components/landing/Banner";
+import { PartyPopper } from "lucide-react";
+import { Icon } from "../../src/components/Icon";
 
 export const metadata: Metadata = {
   title: "Invitaciones de cumpleaños en video — AltaParty",
   description:
-    "Elegí un diseño, cargá tu foto y los datos de la fiesta y descargá un MP4 animado listo para WhatsApp. Probalo gratis antes de comprar.",
+    "Elegí un diseño, cargá tu foto y los datos de la fiesta y descargá un video MP4 animado listo para WhatsApp. Probalo gratis antes de comprar.",
   alternates: { canonical: "/landing" },
 };
 
 const FEATURES = [
   {
-    icon: "🎨",
+    icon: "palette",
     title: "Diseños con personalidad",
     text: "Plantillas infantiles, juveniles y elegantes, todas animadas.",
   },
   {
-    icon: "📸",
+    icon: "camera",
     title: "Tu foto, tus datos",
     text: "Nombre, edad, lugar y horario aparecen en la animación.",
   },
   {
-    icon: "📱",
+    icon: "smartphone",
     title: "Listo para WhatsApp",
-    text: "Un MP4 vertical que se ve bien en cualquier celular.",
+    text: "Un video MP4 vertical que se ve bien en cualquier celular.",
   },
 ];
 
@@ -45,7 +47,7 @@ const STACK = [
   {
     kicker: "Paso 3",
     title: "Descargá el video y mandalo por WhatsApp",
-    text: "La vista previa con marca de agua es gratis. Si te gusta, comprás y descargás el MP4 final, y podés rehacerlo si te equivocaste en un dato.",
+    text: "La vista previa con marca de agua es gratis. Si te gusta, comprás y descargás el video MP4 final, y podés rehacerlo si te equivocaste en un dato.",
     bg: "yellow",
     mascots: ["blob", "star"] as const,
   },
@@ -57,7 +59,7 @@ export default function Landing() {
       <header className="lf-nav">
         <a className="lf-logo" href="/landing">
           <span className="lf-logo-mark" aria-hidden="true">
-            🎉
+            <PartyPopper size={18} />
           </span>
           AltaParty
         </a>
@@ -79,7 +81,7 @@ export default function Landing() {
           <h1>Los cumpleaños se invitan con movimiento</h1>
           <p className="lf-lead">
             Creá una invitación animada con tu foto, la música que quieras y los
-            datos de la fiesta. Descargala en MP4 y mandala por WhatsApp.
+            datos de la fiesta. Descargala en video MP4 y mandala por WhatsApp.
           </p>
           <a className="lf-btn" href="/">
             Empezar gratis
@@ -97,7 +99,7 @@ export default function Landing() {
         {FEATURES.map((f) => (
           <article key={f.title}>
             <span className="lf-ico" aria-hidden="true">
-              {f.icon}
+              <Icon name={f.icon} size={26} />
             </span>
             <h2>{f.title}</h2>
             <p>{f.text}</p>

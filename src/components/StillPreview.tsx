@@ -2,6 +2,7 @@
 
 import type {TemplateContent, TemplateDefinition} from '../templates/types';
 import {TemplateCanvas} from './TemplateCanvas';
+import {Clapperboard, Image, ShoppingCart} from 'lucide-react';
 
 /** Vista previa de la imagen 1080×1920 (con marca de agua mientras no se compra). */
 export function StillPreview({template, content, watermark = true, scale = 0.6}: {template: TemplateDefinition; content: TemplateContent; watermark?: boolean; scale?: number}) {
@@ -11,7 +12,7 @@ export function StillPreview({template, content, watermark = true, scale = 0.6}:
 				<TemplateCanvas template={template} content={content} poster scale={scale} watermark={watermark} label="Imagen de tu invitación (1080×1920)" />
 			</div>
 			<p className="fine" style={{textAlign: 'center'}}>
-				🖼 Imagen vertical 1080×1920 (PNG y JPG) con el estilo del video, lista para WhatsApp, estados e Instagram.
+				Imagen vertical 1080×1920 (PNG y JPG) con el estilo del video, lista para WhatsApp, estados e Instagram.
 			</p>
 		</div>
 	);
@@ -22,14 +23,14 @@ export function PreviewTabs<M extends string>({mode, onChange, ml = false}: {mod
 	return (
 		<div className="preview-tabs" role="tablist" aria-label="Qué querés ver">
 			<button type="button" role="tab" aria-selected={mode === 'video'} className="preview-tab" onClick={() => onChange('video' as M)}>
-				🎬 Video
+				<Clapperboard size={16} aria-hidden="true" /> Video
 			</button>
 			<button type="button" role="tab" aria-selected={mode === 'image'} className="preview-tab" onClick={() => onChange('image' as M)}>
-				🖼 Imagen
+				<Image size={16} aria-hidden="true" /> Imagen
 			</button>
 			{ml && (
 				<button type="button" role="tab" aria-selected={mode === 'ml'} className="preview-tab" onClick={() => onChange('ml' as M)}>
-					🛒 Mercado Libre
+					<ShoppingCart size={16} aria-hidden="true" /> Mercado Libre
 				</button>
 			)}
 		</div>

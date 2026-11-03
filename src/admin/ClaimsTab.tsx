@@ -5,9 +5,10 @@ import {adminApi} from './api';
 import {getNetwork} from '../config/gratis';
 import {useSiteConfig} from '../state/SiteConfig';
 import type {ClaimRecord} from '../server/db';
+import {Icon} from '../components/Icon';
 
 const fmtDate = (ms: number) => new Date(ms).toLocaleString('es-AR', {day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit'});
-const STATE = {pending: '⏳ Pendiente', approved: '✅ Aprobado', rejected: '❌ Rechazado'} as const;
+const STATE = {pending: 'Pendiente', approved: 'Aprobado', rejected: 'Rechazado'} as const;
 
 /** Revisión de canjes gratis: abrir el enlace, comprobar las vistas y aprobar (crea el código) o rechazar. */
 export function ClaimsTab() {
@@ -52,7 +53,7 @@ export function ClaimsTab() {
 				const net = getNetwork(c.network);
 				return (
 					<div key={c.id} className="panel">
-						<p><strong>{STATE[c.status]}</strong> · {net?.icon} {net?.name} · {fmtDate(c.createdAt)} · {name(c.templateId)}</p>
+						<p><strong>{STATE[c.status]}</strong> · {net && <Icon name={net.icon} />} {net?.name} · {fmtDate(c.createdAt)} · {name(c.templateId)}</p>
 						<p><a href={c.url} target="_blank" rel="noreferrer noopener">{c.url}</a></p>
 						<p className="hint">Declaró {c.views.toLocaleString('es-AR')} vistas (mínimo {net?.threshold.toLocaleString('es-AR')}) · Contacto: {c.contact ? c.contact.replace(/^wa:/, 'WhatsApp +') : '(borrado)'}</p>
 						{c.note && <p className="hint">Nota: {c.note}</p>}

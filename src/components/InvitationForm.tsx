@@ -3,6 +3,7 @@
 import React, {useId, useRef, useState} from 'react';
 import {useInvitation} from '../state/InvitationProvider';
 import {LIMITS, todayIso, validateInvitation, type FieldName} from '../domain/invitation';
+import {Camera} from 'lucide-react';
 
 function PhotoField() {
 	const {state, setPhotoFile} = useInvitation();
@@ -36,7 +37,7 @@ function PhotoField() {
 					// eslint-disable-next-line @next/next/no-img-element
 					<img className="photo-thumb" src={state.photo.previewUrl} alt="Foto elegida" />
 				) : (
-					<div className="photo-thumb" aria-hidden="true">📷</div>
+					<div className="photo-thumb" aria-hidden="true"><Camera size={22} /></div>
 				)}
 				<div className="photo-actions">
 					<button type="button" className="btn btn-secondary btn-sm" onClick={() => inputRef.current?.click()} disabled={busy}>
@@ -58,11 +59,13 @@ function PhotoField() {
 
 type Props = {
 	submitLabel: string;
+	/** ícono opcional delante del texto del botón principal */
+	submitIcon?: React.ReactNode;
 	onSubmit: () => void;
 	onCancel?: () => void;
 };
 
-export function InvitationForm({submitLabel, onSubmit, onCancel}: Props) {
+export function InvitationForm({submitLabel, submitIcon, onSubmit, onCancel}: Props) {
 	const {state, setField} = useInvitation();
 	const [touched, setTouched] = useState<Partial<Record<FieldName, boolean>>>({});
 	const [submitted, setSubmitted] = useState(false);
@@ -179,7 +182,7 @@ export function InvitationForm({submitLabel, onSubmit, onCancel}: Props) {
 				<p className="alert alert-error" role="alert">Revisá los campos marcados para continuar.</p>
 			)}
 			<div className="actions-bar">
-				<button type="submit" className="btn btn-primary">{submitLabel}</button>
+				<button type="submit" className="btn btn-primary">{submitIcon}{submitLabel}</button>
 				{onCancel && (
 					<button type="button" className="btn btn-secondary" onClick={onCancel}>Cancelar</button>
 				)}

@@ -18,6 +18,9 @@ const FONTS = [
 	['DMSans', 'DM+Sans', '400..800'],
 	['Inter', 'Inter', '400..600'],
 	['Caveat', 'Caveat', '600'],
+	// títulos de la interfaz
+	['BagelFatOne', 'Bagel+Fat+One', '400'],
+	['DynaPuff', 'DynaPuff', '400..700'],
 ];
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36';
 const out = path.join(import.meta.dirname, '..', 'public', 'fonts');

@@ -33,14 +33,14 @@ export const GRATIS = {
 } as const;
 
 export const NETWORKS: Network[] = [
-	{id: 'instagram', name: 'Instagram', icon: '📸', format: 'Reel o publicación pública', threshold: 500, hosts: ['instagram.com']},
-	{id: 'tiktok', name: 'TikTok', icon: '🎵', format: 'Video público', threshold: 500, hosts: ['tiktok.com']},
-	{id: 'facebook', name: 'Facebook', icon: '👍', format: 'Reel o video público', threshold: 500, hosts: ['facebook.com', 'fb.watch', 'fb.com']},
-	{id: 'youtube', name: 'YouTube Shorts', icon: '▶️', format: 'Short público', threshold: 500, hosts: ['youtube.com', 'youtu.be']},
+	{id: 'instagram', name: 'Instagram', icon: 'camera', format: 'Reel o publicación pública', threshold: 500, hosts: ['instagram.com']},
+	{id: 'tiktok', name: 'TikTok', icon: 'music', format: 'Video público', threshold: 500, hosts: ['tiktok.com']},
+	{id: 'facebook', name: 'Facebook', icon: 'thumbs-up', format: 'Reel o video público', threshold: 500, hosts: ['facebook.com', 'fb.watch', 'fb.com']},
+	{id: 'youtube', name: 'YouTube Shorts', icon: 'play', format: 'Short público', threshold: 500, hosts: ['youtube.com', 'youtu.be']},
 	{
 		id: 'x',
 		name: 'X',
-		icon: '✖️',
+		icon: 'x',
 		format: 'Posteo público con el video',
 		threshold: 5000,
 		hosts: ['x.com', 'twitter.com'],

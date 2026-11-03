@@ -11,6 +11,8 @@ import {
 import { formatArs } from "../config/pricing";
 import { useSiteConfig } from "../state/SiteConfig";
 import { PURCHASE_KEY } from "./OfferPanel";
+import { PartyPopper, RefreshCw } from "lucide-react";
+import { Icon } from "./Icon";
 
 const CLAIM_KEY = "gratis:claim";
 
@@ -130,7 +132,7 @@ export function GratisPage() {
       <header className="app-header">
         <a className="brand" href="/" aria-label="Ir al inicio">
           <span className="brand-mark" aria-hidden="true">
-            🎉
+            <PartyPopper size={22} />
           </span>
           AltaParty
         </a>
@@ -191,7 +193,7 @@ export function GratisPage() {
             {NETWORKS.map((n) => (
               <li key={n.id} className="panel">
                 <span aria-hidden="true" style={{ fontSize: 26 }}>
-                  {n.icon}
+                  <Icon name={n.icon} />
                 </span>
                 <strong>{n.name}</strong>
                 <span className="hint">{n.format}</span>
@@ -387,7 +389,7 @@ export function GratisPage() {
             <li>
               Cada canje lo revisa una persona y su decisión es final. El código
               gratis vence a los {config.pricing.retentionDays} días y permite
-              hasta {config.pricing.maxFinalRenders} generaciones, igual que una
+              hasta {config.pricing.maxFinalRenders} creaciones, igual que una
               compra.
             </li>
             <li>
@@ -429,7 +431,7 @@ function ClaimResult({
       <p className="eyebrow">Tu canje</p>
       {claim.status === "pending" && (
         <>
-          <h2 style={{ fontSize: 26 }}>Recibimos tu canje ⏳</h2>
+          <h2 style={{ fontSize: 26 }}>Recibimos tu canje</h2>
           <p className="lead">
             Lo estamos revisando; te respondemos en menos de{" "}
             {GRATIS.reviewHours} horas. Volvé a esta página y tocá{" "}
@@ -439,9 +441,9 @@ function ClaimResult({
       )}
       {claim.status === "approved" && claim.purchaseId && (
         <>
-          <h2 style={{ fontSize: 26 }}>¡Aprobado! 🎉 Tu video es gratis</h2>
+          <h2 style={{ fontSize: 26 }}>¡Aprobado! Tu video es gratis</h2>
           <p className="lead">
-            Tocá el botón y te llevamos al generador con tu código ya cargado.
+            Tocá el botón y te llevamos al creador con tu código ya cargado.
           </p>
           <p className="fine">
             Código: <code>{claim.purchaseId}</code>
@@ -472,7 +474,7 @@ function ClaimResult({
             className="btn btn-secondary"
             onClick={onRefresh}
           >
-            🔄 Actualizar
+            <RefreshCw size={16} aria-hidden="true" /> Actualizar
           </button>
         )}
         {claim.status === "rejected" && (

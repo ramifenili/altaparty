@@ -7,6 +7,7 @@ import {TemplateCanvas} from '../components/TemplateCanvas';
 import {adminApi} from './api';
 import {fillTitle, matchesSearch, normalizeTags, SITE_NAME, SLUG_RE, slugify, stripSiteSuffix, templateSeo, templateSlug, type SeoFields} from '../lib/seo';
 import {useSettings} from './useSettings';
+import {Check, ExternalLink, EyeOff} from 'lucide-react';
 
 /** Qué plantillas se muestran en el sitio y en qué orden. */
 export function TemplatesTab() {
@@ -128,8 +129,8 @@ export function TemplatesTab() {
 			<p className="lead" style={{fontSize: 15}}>Elegí qué plantillas ven tus clientes y en qué orden. Una plantilla no publicada no aparece en el inicio, pero las compras ya hechas de esa plantilla siguen funcionando.</p>
 			<div style={{display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center'}}>
 				<nav className="admin-tabs" aria-label="Estado" style={{margin: 0}}>
-					<button type="button" className="chip" aria-pressed={tab === 'pub'} onClick={() => setTab('pub')}>✅ Publicadas ({published.length})</button>
-					<button type="button" className="chip" aria-pressed={tab === 'draft'} onClick={() => setTab('draft')}>🙈 No publicadas ({drafts.length})</button>
+					<button type="button" className="chip" aria-pressed={tab === 'pub'} onClick={() => setTab('pub')}><Check size={14} aria-hidden="true" /> Publicadas ({published.length})</button>
+					<button type="button" className="chip" aria-pressed={tab === 'draft'} onClick={() => setTab('draft')}><EyeOff size={14} aria-hidden="true" /> No publicadas ({drafts.length})</button>
 				</nav>
 				<input type="search" className="input input-sm" style={{maxWidth: 260}} placeholder="Buscar por nombre, categoría o etiqueta…" aria-label="Buscar plantilla" value={query} onChange={(e) => setQuery(e.target.value)} />
 			</div>
@@ -170,7 +171,7 @@ export function TemplatesTab() {
 											{usedLabels.map((l) => (
 												<option key={l} value={l}>{l}</option>
 											))}
-											<option value="__new__">➕ Nueva categoría…</option>
+											<option value="__new__">Nueva categoría…</option>
 										</select>
 										{newLabel[id] && (
 											<input className="input input-sm" style={{marginTop: 6}} autoFocus maxLength={30} placeholder="Nombre de la categoría nueva" aria-label="Nombre de la categoría nueva" value={labelOf(id).category ?? ''} onChange={(e) => setLabel(id, {category: e.target.value})} />
@@ -213,7 +214,7 @@ export function TemplatesTab() {
 												{suggested && suggested !== slug && (
 													<p className="hint">Sugerida con el nombre nuevo: <code>{suggested}</code>{' '}<button type="button" className="link" onClick={() => setSeoField(id, {slug: suggested})}>Usar esta</button></p>
 												)}
-												<p className="hint">Solo minúsculas, números y guiones. Queda: <a href={url} target="_blank" rel="noreferrer"><code>{url}</code> ↗</a></p>
+												<p className="hint">Solo minúsculas, números y guiones. Queda: <a href={url} target="_blank" rel="noreferrer"><code>{url}</code> <ExternalLink size={13} aria-hidden="true" /></a></p>
 											</div>
 											<div className="field">
 												<label htmlFor={`st-${id}`}>Título (Google y pestaña) <span className="opt">{cur.title.length}/80 · ideal 50–60</span></label>

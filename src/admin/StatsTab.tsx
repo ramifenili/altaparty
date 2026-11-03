@@ -1,5 +1,6 @@
 'use client';
 
+import {ExternalLink} from 'lucide-react';
 import React, {useEffect, useState} from 'react';
 import {adminApi} from './api';
 import {getParams, setParams} from './url';
@@ -84,10 +85,10 @@ export function StatsTab() {
 					))}
 				</div>
 				<p className="fine">Son contadores propios (sin cookies). Para ver grabaciones de sesiones y mapas de calor usá Clarity; para audiencias y origen del tráfico, Google Analytics.</p>
-				<p className="fine"><strong>Vistas previas generadas, dispositivo y tiempo:</strong> el evento <code>preview_ready</code> se envía a Google Analytics con los parámetros <code>device_type</code> (mobile/desktop) y <code>render_ms</code> (milisegundos reales del render), y a Clarity con las etiquetas <code>device_type</code> y <code>preview_render_s</code>. En GA4 (Administrar → Definiciones personalizadas) registrá ambos parámetros como dimensión/métrica personalizada para verlos en Explorar; Clarity los muestra como filtro. Solo cuentan visitantes que aceptaron el aviso de analítica.</p>
+				<p className="fine"><strong>Vistas previas creadas, dispositivo y tiempo:</strong> el evento <code>preview_ready</code> se envía a Google Analytics con los parámetros <code>device_type</code> (mobile/desktop) y <code>render_ms</code> (milisegundos reales del render), y a Clarity con las etiquetas <code>device_type</code> y <code>preview_render_s</code>. En GA4 (Administrar → Definiciones personalizadas) registrá ambos parámetros como dimensión/métrica personalizada para verlos en Explorar; Clarity los muestra como filtro. Solo cuentan visitantes que aceptaron el aviso de analítica.</p>
 				<div className="actions-bar">
-					{clarity ? <a className="btn btn-secondary btn-sm" target="_blank" rel="noreferrer" href={`https://clarity.microsoft.com/projects/view/${clarity}/dashboard`}>Abrir Clarity ↗</a> : <span className="fine">Clarity: cargá el ID en Ajustes.</span>}
-					{ga ? <a className="btn btn-secondary btn-sm" target="_blank" rel="noreferrer" href="https://analytics.google.com/">Abrir Google Analytics ↗</a> : <span className="fine">Google Analytics: cargá el ID en Ajustes.</span>}
+					{clarity ? <a className="btn btn-secondary btn-sm" target="_blank" rel="noreferrer" href={`https://clarity.microsoft.com/projects/view/${clarity}/dashboard`}>Abrir Clarity <ExternalLink size={13} aria-hidden="true" /></a> : <span className="fine">Clarity: cargá el ID en Ajustes.</span>}
+					{ga ? <a className="btn btn-secondary btn-sm" target="_blank" rel="noreferrer" href="https://analytics.google.com/">Abrir Google Analytics <ExternalLink size={13} aria-hidden="true" /></a> : <span className="fine">Google Analytics: cargá el ID en Ajustes.</span>}
 				</div>
 			</section>
 
@@ -113,12 +114,12 @@ export function StatsTab() {
 				<p className="fine">Hay {s.activeWithData} compra(s) con datos personales guardados; se borran solas al vencer.</p>
 				<div className="table-wrap">
 					<table className="table">
-						<thead><tr><th>Creada</th><th>Plantilla</th><th>Estado</th><th>Importe</th><th>Generaciones</th><th>Entregada</th><th>Vence</th><th>Código</th></tr></thead>
+						<thead><tr><th>Creada</th><th>Plantilla</th><th>Estado</th><th>Importe</th><th>Creaciones</th><th>Entregada</th><th>Vence</th><th>Código</th></tr></thead>
 						<tbody>
 							{s.recent.map((p) => (
 								<tr key={p.id}>
 									<td>{fmtDate(p.createdAt)}</td>
-									<td>{name(p.templateId)}{p.testMode ? ' 🧪' : ''}</td>
+									<td>{name(p.templateId)}{p.testMode ? ' (prueba)' : ''}</td>
 									<td><span className={`pill pill-${p.state.replace(' ', '-')}`}>{p.state}</span></td>
 									<td>{formatArs(p.amount)}</td>
 									<td>{p.used} / {p.max}</td>

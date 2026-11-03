@@ -3,6 +3,7 @@
 import React from "react";
 import { formatArs } from "../config/pricing";
 import { useSiteConfig } from "../state/SiteConfig";
+import { PartyPopper } from "lucide-react";
 
 type Faq = { id: string; q: string; a: React.ReactNode };
 type Group = { title: string; items: Faq[] };
@@ -32,7 +33,7 @@ export function FaqPage() {
                     <strong>Video MP4</strong>: {formatArs(p.price)}.
                   </li>
                   <li>
-                    <strong>Imagen vertical 1080x1920</strong>:{" "}
+                    <strong>Imagen vertical 1080×1920</strong>:{" "}
                     {formatArs(p.imagePrice)}.
                   </li>
                   <li>
@@ -64,7 +65,7 @@ export function FaqPage() {
               <p>
                 Los pagos con tarjeta o dinero en cuenta se acreditan en el
                 momento. Al terminar, Mercado Pago te devuelve a AltaParty y ya
-                podés generar tu video.
+                podés crear tu video.
               </p>
               <p>
                 Si pagaste con un medio en efectivo, puede demorar hasta que el
@@ -80,7 +81,7 @@ export function FaqPage() {
           a: (
             <>
               <p>
-                El video no se envía por mail: se genera y se descarga desde la
+                El video no se envía por mail: se crea y se descarga desde la
                 página. Volvé a AltaParty desde el mismo dispositivo y tocá{" "}
                 <em>Verificar mi pago</em>.
               </p>
@@ -103,11 +104,11 @@ export function FaqPage() {
           q: "¿Puedo corregir mi invitación después de comprar?",
           a: (
             <p>
-              Sí. Con tu compra podés generar el video hasta{" "}
+              Sí. Con tu compra podés crear el video hasta{" "}
               <strong>{p.maxFinalRenders} veces</strong>, por ejemplo para
               corregir un error de tipeo en el nombre, el lugar o el horario.
-              Volvé con tu código de compra, cambiá lo que necesites y generalo
-              de nuevo.
+              Volvé con tu código de compra, cambiá lo que necesites y crealo de
+              nuevo.
             </p>
           ),
         },
@@ -129,7 +130,7 @@ export function FaqPage() {
           a: (
             <p>
               Sí. Cada plantilla trae una canción original, y podés elegir otra
-              de la biblioteca o subir la tuya antes de generar la vista previa.
+              de la biblioteca o subir la tuya antes de crear la vista previa.
             </p>
           ),
         },
@@ -150,7 +151,7 @@ export function FaqPage() {
             <p>
               El video es un MP4 vertical, pensado para compartir por WhatsApp,
               estados o por historias de Instagram. La imagen es un archivo
-              vertical de 1080x1920 (PNG y JPG) con el estilo del diseño.
+              vertical de 1080×1920 (PNG y JPG) con el estilo del diseño.
             </p>
           ),
         },
@@ -196,10 +197,10 @@ export function FaqPage() {
         },
         {
           id: "lento",
-          q: "¿Por qué tarda en generarse el video?",
+          q: "¿Por qué tarda en crearse el video?",
           a: (
             <p>
-              El video se genera en tu propio dispositivo, no en nuestros
+              El video se crea en tu propio dispositivo, no en nuestros
               servidores. Según tu celular o computadora puede tardar un rato.
               Dejá la pantalla encendida y no cierres la pestaña hasta que
               termine.
@@ -232,7 +233,7 @@ export function FaqPage() {
       <header className="app-header">
         <a className="brand" href="/" aria-label="Ir al inicio">
           <span className="brand-mark" aria-hidden="true">
-            🎉
+            <PartyPopper size={22} />
           </span>
           AltaParty
         </a>

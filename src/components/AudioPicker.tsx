@@ -3,6 +3,8 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useInvitation } from "../state/InvitationProvider";
 import { SOUNDS, formatDuration, getSound } from "../audio/library";
+import { Folder, Music, Undo2, Upload, Volume2, VolumeX, X } from "lucide-react";
+import { Icon } from "./Icon";
 
 function PlayIcon({ playing }: { playing: boolean }) {
   return (
@@ -132,7 +134,7 @@ export function AudioPicker() {
     >
       <div className="row-card">
         <span className="ri" aria-hidden="true">
-          🎵
+          <Music size={20} />
         </span>
         <div className="row-main">
           <h3 id="audio-title">Música</h3>
@@ -193,7 +195,7 @@ export function AudioPicker() {
               setOpen(false);
             }}
           >
-            ✕
+            <X size={16} aria-hidden="true" />
           </button>
           <p className="hint" style={{ marginTop: 0 }}>
             Cada diseño trae su propia música. Podés cambiarla o subir la tuya.
@@ -201,7 +203,7 @@ export function AudioPicker() {
 
           <div className="active-audio" aria-live="polite">
             <span>
-              🎵 Sonido activo: <strong>{activeName}</strong>
+              <Music size={16} aria-hidden="true" /> Sonido activo: <strong>{activeName}</strong>
             </span>
             {isDefault && (
               <span className="badge badge-ok">Predeterminado</span>
@@ -216,7 +218,7 @@ export function AudioPicker() {
                 className="btn btn-secondary btn-sm"
                 onClick={() => setAudio({ kind: "default" })}
               >
-                ↩ Volver al predeterminado
+                <Undo2 size={14} aria-hidden="true" /> Volver al predeterminado
                 {defaultSound ? ` (${defaultSound.name})` : ""}
               </button>
             )}
@@ -226,7 +228,7 @@ export function AudioPicker() {
                 className="btn btn-secondary btn-sm"
                 onClick={() => setAudio(sel.previous ?? { kind: "default" })}
               >
-                🔊 Activar sonido
+                <Volume2 size={16} aria-hidden="true" /> Activar sonido
               </button>
             ) : (
               <button
@@ -234,7 +236,7 @@ export function AudioPicker() {
                 className="btn btn-secondary btn-sm"
                 onClick={() => setAudio({ kind: "mute", previous: sel })}
               >
-                🔇 Quitar sonido
+                <VolumeX size={16} aria-hidden="true" /> Quitar sonido
               </button>
             )}
           </div>
@@ -243,7 +245,7 @@ export function AudioPicker() {
             {sel.kind === "custom" && (
               <li className="sound" data-active="true">
                 <span className="sound-icon" aria-hidden="true">
-                  📁
+                  <Folder size="1.1em" />
                 </span>
                 <span className="sound-main" style={{ cursor: "default" }}>
                   <span className="sound-name">{sel.name}</span>
@@ -271,7 +273,7 @@ export function AudioPicker() {
               return (
                 <li key={s.id} className="sound" data-active={active}>
                   <span className="sound-icon" aria-hidden="true">
-                    {s.icon}
+                    <Icon name={s.icon} />
                   </span>
                   <button
                     type="button"
@@ -320,7 +322,7 @@ export function AudioPicker() {
               onClick={() => fileRef.current?.click()}
               disabled={busy}
             >
-              {busy ? <span className="spinner" aria-hidden="true" /> : "⬆"}{" "}
+              {busy ? <span className="spinner" aria-hidden="true" /> : <Upload size={16} aria-hidden="true" />}{" "}
               Subir mi propio audio
             </button>
             <input

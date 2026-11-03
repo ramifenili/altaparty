@@ -90,9 +90,9 @@ export function SettingsTab() {
 						<p className="hint">Pasado ese plazo (contado desde el pago) la compra vence y se borran los datos y la foto del cliente automáticamente.</p>
 					</div>
 					<div className="field">
-						<label htmlFor="s-max">Generaciones por compra</label>
+						<label htmlFor="s-max">Creaciones por compra</label>
 						<input id="s-max" className="input" inputMode="numeric" value={d.maxFinalRenders} onChange={(e) => setD({...d, maxFinalRenders: num(e.target.value)})} />
-						<p className="hint">Cuántas veces puede generar el video final con una misma compra.</p>
+						<p className="hint">Cuántas veces puede crear el video final con una misma compra.</p>
 					</div>
 				</div>
 				<p className="hint">Los cambios rigen para compras nuevas.</p>

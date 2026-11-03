@@ -76,7 +76,7 @@ async function viaWorker(job: FrameJob): Promise<boolean> {
 	try {
 		return await new Promise<boolean>((resolve, reject) => {
 			let chain = Promise.resolve();
-			const onAbort = () => reject(new Error('La generación fue cancelada.'));
+			const onAbort = () => reject(new Error('La creación fue cancelada.'));
 			signal?.addEventListener('abort', onAbort, {once: true});
 			worker.onerror = (ev) => (started ? reject(new Error(ev.message || 'Falló el Worker de dibujo.')) : resolve(false));
 			worker.onmessage = (e: MessageEvent<WorkerOut>) => {
@@ -129,7 +129,7 @@ async function viaMainThread(job: FrameJob) {
 	const ctx = canvas.getContext('2d');
 	if (!ctx) throw new Error('Tu navegador no pudo crear el lienzo de dibujo.');
 	for (let i = 0; i < job.total; i++) {
-		if (signal?.aborted) throw new Error('La generación fue cancelada.');
+		if (signal?.aborted) throw new Error('La creación fue cancelada.');
 		renderFrame(ctx, template, content, i / template.fps, {
 			watermark: job.watermark,
 			scale: job.scale,

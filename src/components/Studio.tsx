@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { isMobileDevice, MOBILE_NOTICE } from "../render/engine";
+// import { isMobileDevice, MOBILE_NOTICE } from "../render/engine";
 import { useInvitation } from "../state/InvitationProvider";
 import { useSiteConfig } from "../state/SiteConfig";
 import { formatLongDate } from "../domain/invitation";
@@ -10,21 +10,34 @@ import { LivePreview } from "./LivePreview";
 import { TemplateCanvas } from "./TemplateCanvas";
 import { AudioPicker } from "./AudioPicker";
 import { InvitationForm } from "./InvitationForm";
+import {
+  CalendarDays,
+  Check,
+  Clapperboard,
+  Clock,
+  MapPin,
+  Pencil,
+  User,
+} from "lucide-react";
 
 export function Studio({
   onGenerate,
   onGallery,
   generating,
+  initialSound,
+  hold,
 }: {
   onGenerate: () => void;
   onGallery: () => void;
   generating: boolean;
+  initialSound?: boolean;
+  hold?: boolean;
 }) {
   const { state, template, content, setTemplate } = useInvitation();
   const { catalog } = useSiteConfig();
   const [editing, setEditing] = useState(false);
-  const [mobile, setMobile] = useState(false);
-  useEffect(() => setMobile(isMobileDevice()), []);
+  // const [mobile, setMobile] = useState(false);
+  // useEffect(() => setMobile(isMobileDevice()), []);
   // flechas de la vista previa: recorren los diseños de a uno (y vuelven al principio)
   const step = (dir: 1 | -1) => {
     if (catalog.length < 2) return;
@@ -40,6 +53,8 @@ export function Studio({
       <h1 className="sr-only">Vista previa de tu invitación</h1>
       <div className="studio-preview">
         <LivePreview
+          initialSound={initialSound}
+          hold={hold}
           arrows={{
             onPrev: () => step(-1),
             onNext: () => step(1),
@@ -91,7 +106,7 @@ export function Studio({
                 className="btn btn-secondary btn-sm"
                 onClick={() => setEditing(true)}
               >
-                ✏️ Editar
+                <Pencil size={14} aria-hidden="true" /> Editar
               </button>
             )}
           </div>
@@ -104,22 +119,22 @@ export function Studio({
           ) : (
             <dl className="summary">
               <dt>
-                <span aria-hidden="true">👤</span> Cumpleañero/a
+                <User size={14} aria-hidden="true" /> Cumpleañero/a
               </dt>
               <dd>
                 {content.name}, {content.age} años
                 {state.photo ? " · con foto" : ""}
               </dd>
               <dt>
-                <span aria-hidden="true">📅</span> Fecha
+                <CalendarDays size={14} aria-hidden="true" /> Fecha
               </dt>
               <dd>{formatLongDate(state.data.date)}</dd>
               <dt>
-                <span aria-hidden="true">🕒</span> Horario
+                <Clock size={14} aria-hidden="true" /> Horario
               </dt>
               <dd>{content.time}</dd>
               <dt>
-                <span aria-hidden="true">📍</span> Lugar
+                <MapPin size={14} aria-hidden="true" /> Lugar
               </dt>
               <dd>
                 {content.venue} — {content.address}
@@ -149,12 +164,12 @@ export function Studio({
             onClick={() => setEditing(true)}
             disabled={editing}
           >
-            ✏️ Editar
+            <Pencil size={14} aria-hidden="true" /> Editar
           </button>
         </div>
 
         <p className="note-ok">
-          <span aria-hidden="true">✓</span> Vas a poder revisar todo antes de
+          <Check size={14} strokeWidth={3} aria-hidden="true" /> Vas a poder revisar todo antes de
           pagar
         </p>
 				 */}
@@ -166,17 +181,21 @@ export function Studio({
             onClick={onGenerate}
             disabled={generating || editing}
           >
-            {generating && <span className="spinner" aria-hidden="true" />}{" "}
-            Generar video
+            {generating ? (
+              <span className="spinner" aria-hidden="true" />
+            ) : (
+              <Clapperboard size={24} aria-hidden="true" />
+            )}{" "}
+            Crear mi video invitación
           </button>
           <p className="cta-free">Gratis · No se realiza ningún cobro</p>
         </div>
         <div className="cta-notes">
-          {mobile && (
+          {/* {mobile && (
             <p className="alert alert-info" style={{ marginTop: 10 }}>
               {MOBILE_NOTICE}
             </p>
-          )}
+          )} */}
           <p className="fine" style={{ textAlign: "center" }}>
             {editing ? "Guardá los cambios de tus datos para continuar. " : ""}
             El video se crea en tu navegador: la vista previa no sube tu foto a

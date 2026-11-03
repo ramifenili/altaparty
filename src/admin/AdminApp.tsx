@@ -9,14 +9,15 @@ import {SettingsTab} from './SettingsTab';
 import {ClaimsTab} from './ClaimsTab';
 import {UsageTab} from './UsageTab';
 import {getParams, setParams} from './url';
+import {ChartColumn, Droplets, ExternalLink, Film, FlaskConical, Gift, HardDrive, Settings, Wrench} from 'lucide-react';
 
 const TABS = [
-	{id: 'resumen', label: '📊 Resumen'},
-	{id: 'gratis', label: '🎁 Canjes gratis'},
-	{id: 'plantillas', label: '🎞 Plantillas'},
-	{id: 'marca', label: '💧 Marca de agua'},
-	{id: 'uso', label: '💾 Uso'},
-	{id: 'ajustes', label: '⚙️ Ajustes'},
+	{id: 'resumen', label: 'Resumen', icon: ChartColumn},
+	{id: 'gratis', label: 'Canjes gratis', icon: Gift},
+	{id: 'plantillas', label: 'Plantillas', icon: Film},
+	{id: 'marca', label: 'Marca de agua', icon: Droplets},
+	{id: 'uso', label: 'Uso', icon: HardDrive},
+	{id: 'ajustes', label: 'Ajustes', icon: Settings},
 ] as const;
 type TabId = (typeof TABS)[number]['id'];
 
@@ -66,10 +67,10 @@ export function AdminApp() {
 		<>
 			<header className="app-header">
 				<span className="brand">
-					<span className="brand-mark" aria-hidden="true">🛠</span> Panel interno
+					<span className="brand-mark" aria-hidden="true"><Wrench size={20} /></span> Panel interno
 				</span>
 				<span style={{display: 'flex', gap: 8}}>
-					<a className="btn btn-secondary btn-sm" href="/" target="_blank" rel="noreferrer">Ver el sitio ↗</a>
+					<a className="btn btn-secondary btn-sm" href="/" target="_blank" rel="noreferrer">Ver el sitio <ExternalLink size={13} aria-hidden="true" /></a>
 					<button
 						type="button"
 						className="btn btn-secondary btn-sm"
@@ -83,14 +84,14 @@ export function AdminApp() {
 				</span>
 			</header>
 			<main>
-				{testMode && <p className="alert alert-info">🧪 Modo prueba local activo (pagos simulados): las compras de prueba no cuentan como ventas.</p>}
+				{testMode && <p className="alert alert-info"><FlaskConical size={14} aria-hidden="true" /> Modo prueba local activo (pagos simulados): las compras de prueba no cuentan como ventas.</p>}
 				<nav className="admin-tabs" aria-label="Secciones">
 					{TABS.map((t) => (
 						<button key={t.id} type="button" className="chip" aria-pressed={tab === t.id} onClick={() => {
 								setTab(t.id);
 								setParams({tab: t.id, video: null, scene: null, layer: null, days: null}, 'push');
 							}}>
-							{t.label}
+							<t.icon size={14} aria-hidden="true" /> {t.label}
 						</button>
 					))}
 				</nav>

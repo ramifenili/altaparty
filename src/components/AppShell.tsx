@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useInvitation, type Step } from "../state/InvitationProvider";
 import { InvitationForm } from "./InvitationForm";
 import { TemplateGallery } from "./TemplateGallery";
@@ -85,7 +85,7 @@ function ContinueBar({ name }: { name: string }) {
         <strong>{name}</strong>
       </span>
       <button type="button" className="btn btn-primary" onClick={go}>
-        Cargar mis datos →
+        Cargar mis datos
       </button>
     </div>
   );
@@ -112,21 +112,31 @@ export function AppShell({
     [goto],
   );
 
-  // al elegir una plantilla: título de la pestaña y URL propios de esa plantilla (se puede compartir y se indexa)
+  // título de la pestaña y URL propios de la plantilla, pero recién al apretar "Ver mi invitación"
+  // (elegir una tarjeta en la galería no cambia la dirección)
+  const baseTitle = useRef<string | null>(null);
   useEffect(() => {
-    if (
-      state.templateSeq === 0 ||
-      (state.step !== "form" && state.step !== "studio")
-    )
-      return;
-    const ov = config.templates[template.id];
-    document.title = templateSeo(template, ov).title;
-    window.history.replaceState(
-      null,
-      "",
-      `${TEMPLATE_PATH}/${templateSlug(template, ov)}`,
-    );
-  }, [state.templateSeq, state.step, template, config.templates]);
+    baseTitle.current = document.title;
+  }, []);
+  useEffect(() => {
+    if (state.step === "studio") {
+      const ov = config.templates[template.id];
+      document.title = templateSeo(template, ov).title;
+      window.history.replaceState(
+        null,
+        "",
+        `${TEMPLATE_PATH}/${templateSlug(template, ov)}`,
+      );
+    } else if (
+      state.step === "form" &&
+      !intro &&
+      window.location.pathname.startsWith(TEMPLATE_PATH)
+    ) {
+      // al volver del estudio a la galería, la dirección vuelve al inicio
+      window.history.replaceState(null, "", "/");
+      if (baseTitle.current) document.title = baseTitle.current;
+    }
+  }, [state.templateSeq, state.step, template, config.templates, intro]);
 
   useEffect(() => {
     if (state.hydrated) track("page_view");
@@ -211,6 +221,7 @@ export function AppShell({
   };
 
   const currentIdx = STEPS.findIndex((s) => s.steps.includes(state.step));
+  const progressPct = Math.round(((currentIdx + 1) / STEPS.length) * 100);
 
   return (
     <>
@@ -226,13 +237,16 @@ export function AppShell({
           </span>
           AltaParty
         </button>
-        {/* <a className="btn btn-secondary btn-sm" href="/gratis">
-          🎁 <span className="hide-xs">Conseguilo&nbsp;</span>gratis
-        </a> */}
         {state.step === "studio" && (
           <span className="hdr-note">ⓘ Podés cambiar los datos después</span>
         )}
-        <nav aria-label="Progreso">
+        <nav aria-label="Progreso" className="wizard-nav">
+          <p className="step-caption" aria-hidden="true">
+            <span>
+              Paso {currentIdx + 1} de {STEPS.length}
+            </span>
+            <strong>{STEPS[currentIdx]?.label}</strong>
+          </p>
           <ol className="stepper">
             {STEPS.map((s, i) => (
               <li
@@ -246,13 +260,15 @@ export function AppShell({
             ))}
           </ol>
         </nav>
+        <div className="wizard-progress" aria-hidden="true">
+          <span style={{ width: `${progressPct}%` }} />
+        </div>
       </header>
 
-      <main>
+      <main data-step={state.step}>
         {state.step === "form" && (
           <div className="home">
             <div className="home-intro">
-              <p className="eyebrow">Invitaciones de cumpleaños en video</p>
               {intro ? (
                 <h1>
                   {state.templateSeq === 0
@@ -265,34 +281,30 @@ export function AppShell({
                 </h1>
               )}
               <p className="lead">
-                {intro ? `${intro.text} ` : ""}Elegí un diseño, personalizalo
-                con tus datos y tu foto, cambiá la música y descargá un MP4
-                listo para compartir por WhatsApp.
+                {intro ? `${intro.text} ` : ""}
+                <span className="lead-long">
+                  Elegí un diseño, personalizalo con tus datos y tu foto, cambiá
+                  la música y descargá un MP4 listo para compartir por WhatsApp.
+                </span>
+                <span className="lead-short">
+                  Elegí un diseño y personalizalo con tus datos.
+                </span>
               </p>
-              <ul className="checks" aria-label="Beneficios">
-                <li>Sin instalar nada</li>
-                <li>MP4 para WhatsApp</li>
-                <li>Tu foto queda en tu dispositivo hasta que comprás</li>
-              </ul>
             </div>
             <div className="home-grid">
               {intro ? <DirectPreview /> : <TemplateGallery />}
               <aside className="home-form" aria-labelledby="form-title">
                 {/* <p aria-hidden="true">¡Completá los datos y creá tu invitación!</p> */}
                 <div className="form-card" id="form-card">
-                  <div className="steps-bar" aria-hidden="true">
-                    <i data-on="true" />
-                    <i data-on="true" />
-                    <i />
-                  </div>
-                  <p className="eyebrow">Paso 2 de 3</p>
-                  <h2 id="form-title">Personalizá tu invitación</h2>
-                  <p className="hint">
-                    Diseño elegido: <strong>{template.name}</strong>. Después
-                    podés cambiarlo sin volver a cargar nada.
+                  <h2 id="form-title" className="sr-only">
+                    Personalizá tu invitación
+                  </h2>
+                  <p className="hint swap-in" key={template.id}>
+                    Diseño elegido: <strong>{template.name}</strong>. Tu foto no
+                    sale de tu dispositivo hasta que comprás.
                   </p>
                   <InvitationForm
-                    submitLabel="Ver mi invitación →"
+                    submitLabel="Ver mi invitación"
                     onSubmit={() => goto("studio")}
                   />
                 </div>
@@ -323,6 +335,10 @@ export function AppShell({
             job={job.state}
             onRetry={generatePreview}
             onCancel={cancelProcessing}
+            onSkip={() => {
+              job.cancel();
+              goto("offer");
+            }}
           />
         )}
 

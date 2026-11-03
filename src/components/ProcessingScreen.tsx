@@ -5,6 +5,7 @@ import type { JobState } from "../hooks/useExportJob";
 import { useInvitation } from "../state/InvitationProvider";
 import { TemplateCanvas } from "./TemplateCanvas";
 import { ProgressView } from "./ProgressView";
+import { useIsAdmin } from "./AdminMlImages";
 
 const CHECKS = [
   {
@@ -35,12 +36,16 @@ export function ProcessingScreen({
   job,
   onRetry,
   onCancel,
+  onSkip,
 }: {
   job: JobState;
   onRetry: () => void;
   onCancel: () => void;
+  /** atajo de administrador: salta la espera de la vista previa */
+  onSkip?: () => void;
 }) {
   const { template, content } = useInvitation();
+  const admin = useIsAdmin();
   const idx = Math.max(0, ORDER.indexOf(job.phase));
   return (
     <section
@@ -87,7 +92,12 @@ export function ProcessingScreen({
           </>
         ) : (
           <>
-            <ProgressView job={job} />
+            <ProgressView job={job} title="Estamos creando tu video…" />
+            {admin && onSkip && (
+              <button type="button" className="admin-chip" onClick={onSkip}>
+                ⏭ Saltear (admin)
+              </button>
+            )}
             {/* 
             <button type="button" className="btn btn-ghost" onClick={onCancel}>
               Cancelar

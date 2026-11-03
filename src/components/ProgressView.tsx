@@ -14,7 +14,7 @@ const PHASES: {phase: Phase; label: string}[] = [
 const ORDER: Phase[] = ['prepare', 'frames', 'audio', 'encode', 'finish'];
 
 /** Barra y fases del procesamiento. Los porcentajes son los reales del render; en la espera final no se inventa ninguno. */
-export function ProgressView({job, finalLabel}: {job: JobState; finalLabel?: string}) {
+export function ProgressView({job, finalLabel, title}: {job: JobState; finalLabel?: string; /** título fijo (p. ej. "Generando tu video…"); la fase actual pasa a la línea del porcentaje */ title?: string}) {
 	const idx = ORDER.indexOf(job.phase);
 	const pct = Math.floor(Math.min(job.status === 'done' ? 100 : 99, job.overall * 100));
 	const indeterminate = job.finishing;
@@ -23,7 +23,7 @@ export function ProgressView({job, finalLabel}: {job: JobState; finalLabel?: str
 
 	return (
 		<div style={{width: '100%', display: 'grid', gap: 16, justifyItems: 'center'}}>
-			<h2 style={{fontSize: 26}} aria-live="polite">{label}</h2>
+			<h2 style={{fontSize: 26}} aria-live="polite">{title ?? label}</h2>
 			<div
 				className={`progress${indeterminate ? ' indeterminate' : ''}`}
 				role="progressbar"
@@ -35,7 +35,7 @@ export function ProgressView({job, finalLabel}: {job: JobState; finalLabel?: str
 				<div style={{width: `${pct}%`}} />
 			</div>
 			<p className="fine" style={{margin: 0}}>
-				{indeterminate ? 'Ya casi: terminando los últimos detalles' : `${pct}%`}
+				{indeterminate ? 'Ya casi: terminando los últimos detalles' : title ? `${pct}% · ${label.replace(/\.{3}$/, '')}` : `${pct}%`}
 			</p>
 			<ul className="phase-list">
 				{PHASES.map((p, i) => {

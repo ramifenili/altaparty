@@ -7648,3 +7648,49 @@ h3,
 	border-top: 1px solid var(--wise-border);
 	border-bottom: 1px solid var(--wise-border);
 }
+
+/* ---------- inputs de fecha/hora y textos del formulario: Safari y Chrome ---------- */
+.form-grid > *,
+.row-2 > * {
+  min-width: 0;
+}
+
+.field input {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.field input[type="date"],
+.field input[type="time"] {
+  -webkit-appearance: none;
+  appearance: none;
+  display: block;
+  width: 100%;
+  line-height: normal;
+  text-align: left;
+  overflow: hidden;
+}
+
+.field input[type="date"]::-webkit-date-and-time-value,
+.field input[type="time"]::-webkit-date-and-time-value {
+  text-align: left;
+  margin: 0;
+  min-height: 1.2em;
+}
+
+.field input[type="date"]::-webkit-datetime-edit,
+.field input[type="time"]::-webkit-datetime-edit {
+  padding: 0;
+}
+
+.field input[type="date"]::-webkit-datetime-edit-fields-wrapper,
+.field input[type="time"]::-webkit-datetime-edit-fields-wrapper {
+  padding: 0;
+}
+
+.field textarea {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}

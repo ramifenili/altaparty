@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 // import { isMobileDevice, MOBILE_NOTICE } from "../render/engine";
 import { useInvitation } from "../state/InvitationProvider";
 import { useSiteConfig } from "../state/SiteConfig";
@@ -19,6 +19,62 @@ import {
   Pencil,
   User,
 } from "lucide-react";
+
+const IDLE_EXTRA_MS = 10000;
+
+/** Pregunta si ya está todo listo: sin cierre por Esc ni por fuera; hay que elegir una opción. */
+function ReadyPrompt({
+  onYes,
+  onNo,
+}: {
+  onYes: () => void;
+  onNo: () => void;
+}) {
+  const first = useRef<HTMLButtonElement>(null);
+  const second = useRef<HTMLButtonElement>(null);
+  useEffect(() => first.current?.focus(), []);
+  const trap = (e: React.KeyboardEvent) => {
+    if (e.key === "Escape") e.preventDefault();
+    if (e.key !== "Tab") return;
+    const to = e.shiftKey ? second : first;
+    const from = e.shiftKey ? first : second;
+    if (document.activeElement === from.current) {
+      e.preventDefault();
+      to.current?.focus();
+    }
+  };
+  return (
+    <div className="modal-backdrop">
+      <div
+        className="modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="ready-title"
+        onKeyDown={trap}
+      >
+        <h2 id="ready-title">¿Todo listo?</h2>
+        <p>Si ya revisaste la invitación, podemos crear tu video.</p>
+        <button
+          ref={first}
+          type="button"
+          className="btn btn-primary btn-block"
+          onClick={onYes}
+        >
+          <Clapperboard size={18} aria-hidden="true" /> Sí, crear mi video
+          invitación
+        </button>
+        <button
+          ref={second}
+          type="button"
+          className="btn btn-secondary btn-block"
+          onClick={onNo}
+        >
+          No, seguir revisando
+        </button>
+      </div>
+    </div>
+  );
+}
 
 export function Studio({
   onGenerate,
@@ -48,16 +104,47 @@ export function Studio({
     setTemplate(catalog[(i + dir + catalog.length) % catalog.length].id);
   };
 
+  // Inactividad: si pasa un rato mirando la vista previa sin tocar controles ni editar,
+  // preguntamos si ya está todo listo. "No, seguir revisando" duplica la espera.
+  // Al salir de esta pantalla el componente se desmonta y la espera vuelve a la inicial.
+  // espera = lo que dura el video de la plantilla + un margen; siempre la misma
+  const idleMs = template.duration * 1000 + IDLE_EXTRA_MS;
+  const [askReady, setAskReady] = useState(false);
+  const [activity, setActivity] = useState(0);
+  const bump = () => setActivity((n) => n + 1);
+  const paused = editing || generating || !!hold || askReady;
+  useEffect(() => {
+    if (paused) return;
+    const t = setTimeout(() => setAskReady(true), idleMs);
+    return () => clearTimeout(t);
+  }, [paused, idleMs, activity]);
+
   return (
     <div className={`studio${editing ? " is-editing" : ""}`}>
+      {askReady && (
+        <ReadyPrompt
+          onYes={() => {
+            setAskReady(false);
+            onGenerate();
+          }}
+          onNo={() => setAskReady(false)}
+        />
+      )}
       <h1 className="sr-only">Vista previa de tu invitación</h1>
       <div className="studio-preview">
         <LivePreview
           initialSound={initialSound}
           hold={hold}
+          pause={askReady}
           arrows={{
-            onPrev: () => step(-1),
-            onNext: () => step(1),
+            onPrev: () => {
+              bump();
+              step(-1);
+            },
+            onNext: () => {
+              bump();
+              step(1);
+            },
           }}
         />
         {/* 
@@ -96,7 +183,12 @@ export function Studio({
         </section>
 				*/}
       </div>
-      <div className="stack">
+      <div
+        className="stack"
+        onPointerDownCapture={bump}
+        onKeyDownCapture={bump}
+        onChangeCapture={bump}
+      >
         <section className="panel data-card" aria-labelledby="data-title">
           <div className="data-head">
             <h3 id="data-title">Datos de la fiesta</h3>

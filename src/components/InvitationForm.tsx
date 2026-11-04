@@ -127,8 +127,26 @@ export function InvitationForm({submitLabel, submitIcon, onSubmit, onCancel}: Pr
 			onChange={(e) => setField(f, e.target.value)}
 			ref={(el) => {
 				if (!el) return;
+				// una sola línea queda centrada en el alto mínimo del campo (los textarea no centran solos)
+				if (!el.dataset.min) {
+					el.style.minHeight = '';
+					el.dataset.min = String(parseFloat(getComputedStyle(el).minHeight) || 1);
+				}
+				el.style.minHeight = '0';
 				el.style.height = 'auto';
-				el.style.height = `${el.scrollHeight + 4}px`;
+				el.style.paddingTop = '';
+				el.style.paddingBottom = '';
+				const cs = getComputedStyle(el);
+				const borders = el.offsetHeight - el.clientHeight;
+				let h = el.scrollHeight + borders;
+				const min = Number(el.dataset.min);
+				if (h < min) {
+					const extra = (min - h) / 2;
+					el.style.paddingTop = `${parseFloat(cs.paddingTop) + extra}px`;
+					el.style.paddingBottom = `${parseFloat(cs.paddingBottom) + extra}px`;
+					h = min;
+				}
+				el.style.height = `${h}px`;
 			}}
 		/>
 	);

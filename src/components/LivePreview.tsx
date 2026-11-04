@@ -33,8 +33,11 @@ export function LivePreview({
   sample = false,
   arrows,
   hold = false,
+  pause = false,
   initialSound = false,
 }: {
+  /** al pasar a true el video se pausa (no se reanuda solo) */
+  pause?: boolean;
   /** flechas para pasar al diseño anterior / siguiente (solo en el estudio) */
   arrows?: { onPrev: () => void; onNext: () => void };
   clean?: boolean;
@@ -72,6 +75,10 @@ export function LivePreview({
     setPlaying(true);
     setSound(initialSound);
   }, [hold, initialSound]);
+  // al activarse `pause` (un aviso encima) el video queda en pausa; no se reanuda solo
+  useEffect(() => {
+    if (pause) setPlaying(false);
+  }, [pause]);
   const [audioError, setAudioError] = useState(false);
   // además del video, se puede ver la imagen 1080×1920 que sale de la misma plantilla
   const [mode, setMode] = useState<"video" | "image" | "ml">("video");

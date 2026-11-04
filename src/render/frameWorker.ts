@@ -29,6 +29,7 @@ export type WorkerStart = {
 	watermark: boolean;
 	scale: number;
 	fps: number;
+	quality: number;
 	total: number;
 	format: 'jpeg' | 'png';
 	overlayOnly: boolean;
@@ -79,7 +80,7 @@ scope.onmessage = async (e: MessageEvent<WorkerStart | {type: 'ack'; count: numb
 			// control de flujo: no más de 12 fotogramas adelantados respecto de lo que el hilo principal escribió
 			while (i - acked > 12) await new Promise<void>((r) => (wake = r));
 			renderFrame(ctx, template, content, i / msg.fps, {watermark: msg.watermark, scale: msg.scale, media, overlayOnly: msg.overlayOnly});
-			const blob = await canvas.convertToBlob(msg.format === 'png' ? {type: 'image/png'} : {type: 'image/jpeg', quality: 0.9});
+			const blob = await canvas.convertToBlob(msg.format === 'png' ? {type: 'image/png'} : {type: 'image/jpeg', quality: msg.quality});
 			const data = await blob.arrayBuffer();
 			post({type: 'frame', index: i, data}, [data]);
 		}

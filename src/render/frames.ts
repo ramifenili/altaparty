@@ -17,6 +17,10 @@ export type FrameJob = {
 	watermark: boolean;
 	scale: number;
 	total: number;
+	/** fotogramas por segundo del video de salida */
+	fps: number;
+	/** calidad JPEG 0..1 de cada fotograma */
+	quality: number;
 	format: 'jpeg' | 'png';
 	/** videos compilados con fondos de video: solo capas con transparencia */
 	overlayOnly: boolean;
@@ -106,7 +110,8 @@ async function viaWorker(job: FrameJob): Promise<boolean> {
 				fonts,
 				watermark: job.watermark,
 				scale: job.scale,
-				fps: template.fps,
+				fps: job.fps,
+				quality: job.quality,
 				total: job.total,
 				format: job.format,
 				overlayOnly: job.overlayOnly,
@@ -130,13 +135,13 @@ async function viaMainThread(job: FrameJob) {
 	if (!ctx) throw new Error('Tu navegador no pudo crear el lienzo de dibujo.');
 	for (let i = 0; i < job.total; i++) {
 		if (signal?.aborted) throw new Error('La creación fue cancelada.');
-		renderFrame(ctx, template, content, i / template.fps, {
+		renderFrame(ctx, template, content, i / job.fps, {
 			watermark: job.watermark,
 			scale: job.scale,
 			media: job.media ?? undefined,
 			overlayOnly: job.overlayOnly,
 		});
-		const blob = await new Promise<Blob | null>((res) => (job.format === 'png' ? canvas.toBlob(res, 'image/png') : canvas.toBlob(res, 'image/jpeg', 0.9)));
+		const blob = await new Promise<Blob | null>((res) => (job.format === 'png' ? canvas.toBlob(res, 'image/png') : canvas.toBlob(res, 'image/jpeg', job.quality)));
 		if (!blob) throw new Error('No se pudo capturar un fotograma.');
 		await job.onFrame(i, new Uint8Array(await blob.arrayBuffer()));
 	}

@@ -24,13 +24,18 @@ type Common = {
   onProgress?: (p: Progress) => void;
 };
 
+/** Fotogramas por segundo de la vista previa gratis: menos fotogramas = se crea más rápido (misma medida). */
+const PREVIEW_FPS = 20;
+
 /** Vista previa 540x960 con marca de agua en cada fotograma. */
 export function exportPreview(o: Common) {
   return runEngine({
     ...o,
     watermark: true,
     scale: 0.75,
-    crf: 31,
+    fps: PREVIEW_FPS,
+    quality: 0.5,
+    crf: 32,
     preset: "ultrafast",
   });
 }

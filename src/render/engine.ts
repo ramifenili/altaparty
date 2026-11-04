@@ -119,6 +119,10 @@ type EngineOptions = {
   /** solo lo establecen exportPreview (true) y exportFinal (false) */
   watermark: boolean;
   scale: number;
+  /** fotogramas por segundo de salida (por defecto, los de la plantilla) */
+  fps?: number;
+  /** calidad JPEG de los fotogramas intermedios (por defecto 0,9) */
+  quality?: number;
   crf: number;
   preset: string;
   signal?: AbortSignal;
@@ -156,7 +160,7 @@ export async function runEngine(o: EngineOptions): Promise<Blob> {
   const report = (phase: Phase, overall: number) =>
     o.onProgress?.({ phase, overall: Math.min(0.99, overall) });
   const written: string[] = [];
-  const fps = template.fps;
+  const fps = o.fps ?? template.fps;
   const total = Math.round(template.duration * fps);
   const check = () => {
     if (signal?.aborted)
@@ -203,6 +207,8 @@ export async function runEngine(o: EngineOptions): Promise<Blob> {
         watermark: o.watermark,
         scale: o.scale,
         total,
+        fps,
+        quality: o.quality ?? 0.9,
         signal,
         format: overlay ? "png" : "jpeg",
         overlayOnly: overlay,

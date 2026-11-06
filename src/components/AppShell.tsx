@@ -349,15 +349,14 @@ export function AppShell({
                 </h1>
               ) : (
                 <h1>
-                  Tu invitación animada, <em>lista en minutos</em>
+                  Invitaciones de cumpleaños en video, <em>listas en minutos</em>
                 </h1>
               )}
               <p className="lead">
                 {intro ? `${intro.text} ` : ""}
                 <span className="lead-long">
-                  Elegí un diseño, personalizalo con tus datos y tu foto, cambiá
-                  la música y descargá un video MP4 listo para compartir por
-                  WhatsApp.
+                  Elegí un diseño animado, agregá tus datos y tu foto, cambiá la
+                  música y descargá un MP4 para compartir por WhatsApp.
                 </span>
                 <span className="lead-short">
                   Elegí un diseño y personalizalo con tus datos.

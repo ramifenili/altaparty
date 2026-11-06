@@ -30,9 +30,9 @@ export const metadata: Metadata = {
       },
     ],
   },
-  title: "AltaParty — invitaciones de cumpleaños animadas",
+  title: "Invitaciones animadas en video para WhatsApp | AltaParty",
   description:
-    "Creá una invitación de cumpleaños animada en video MP4: elegí una plantilla, cambiá la música, mirá la vista previa y descargá tu video.",
+    "Creá tu invitación de cumpleaños en video: elegí un diseño, sumá tu foto y tu música y descargá el MP4 en minutos para compartir por WhatsApp.",
 };
 
 export const viewport: Viewport = {

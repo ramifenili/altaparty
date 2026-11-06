@@ -6,7 +6,8 @@
 // Si el almacenamiento externo falla, el límite "se abre" (no se bloquea a
 // usuarios legítimos por una caída): queda registrado en consola.
 
-export type Rule = {name: string; limit: number; windowMs: number};
+/** `failClosed`: si el almacenamiento del límite falla, el pedido se rechaza (para login y cobros). */
+export type Rule = {name: string; limit: number; windowMs: number; failClosed?: boolean};
 
 export type HitResult = {allowed: boolean; remaining: number; retryAfterSec: number};
 
@@ -16,15 +17,15 @@ export interface RateLimiter {
 
 /** Reglas por ruta. Los valores más bajos protegen las que crean cobros o consultan a Mercado Pago. */
 export const RULES = {
-	createPurchase: {name: 'crear-compra', limit: 8, windowMs: 10 * 60_000},
+	createPurchase: {name: 'crear-compra', limit: 8, windowMs: 10 * 60_000, failClosed: true},
 	purchaseStatus: {name: 'estado-compra', limit: 60, windowMs: 60_000},
-	authorize: {name: 'autorizar', limit: 15, windowMs: 10 * 60_000},
+	authorize: {name: 'autorizar', limit: 15, windowMs: 10 * 60_000, failClosed: true},
 	verifyAuth: {name: 'verificar-autorizacion', limit: 30, windowMs: 60_000},
 	delivered: {name: 'entregado', limit: 15, windowMs: 10 * 60_000},
-	claimSubmit: {name: 'canje-gratis', limit: 5, windowMs: 10 * 60_000},
+	claimSubmit: {name: 'canje-gratis', limit: 5, windowMs: 10 * 60_000, failClosed: true},
 	claimStatus: {name: 'canje-estado', limit: 60, windowMs: 60_000},
 	webhook: {name: 'webhook', limit: 600, windowMs: 60_000},
-	adminLogin: {name: 'admin-login', limit: 6, windowMs: 10 * 60_000},
+	adminLogin: {name: 'admin-login', limit: 6, windowMs: 10 * 60_000, failClosed: true},
 	adminApi: {name: 'admin-api', limit: 300, windowMs: 60_000},
 	events: {name: 'eventos', limit: 120, windowMs: 60_000},
 	config: {name: 'config', limit: 120, windowMs: 60_000},
@@ -91,12 +92,23 @@ export function getLimiter(): RateLimiter {
 	if (shared) return shared;
 	const url = process.env.UPSTASH_REDIS_REST_URL;
 	const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+	if (!(url && token) && process.env.VERCEL) {
+		console.warn('[ratelimit] En Vercel falta UPSTASH_REDIS_REST_URL/TOKEN: el límite en memoria no se comparte entre instancias y casi no protege.');
+	}
 	shared = url && token ? new UpstashLimiter(url, token) : new MemoryLimiter();
 	return shared;
 }
 
-/** IP del cliente. Solo es confiable detrás de un proxy que ponga `x-forwarded-for` (Vercel, Nginx, Cloudflare). */
-export function clientIp(headers: {get(name: string): string | null}) {
+/**
+ * IP del cliente. En Vercel se usa `x-vercel-forwarded-for`, que pone la plataforma y el cliente
+ * NO puede falsificar (a diferencia de `x-forwarded-for`, cuyo primer valor lo puede escribir cualquiera).
+ * Fuera de Vercel solo es confiable si un proxy propio (Nginx, Cloudflare) reescribe esas cabeceras.
+ */
+export function clientIp(headers: {get(name: string): string | null}, env: Record<string, string | undefined> = process.env) {
+	if (env.VERCEL) {
+		const v = headers.get('x-vercel-forwarded-for')?.split(',')[0]?.trim();
+		if (v) return v;
+	}
 	const fwd = headers.get('x-forwarded-for')?.split(',')[0]?.trim();
 	return fwd || headers.get('x-real-ip')?.trim() || 'sin-ip';
 }
@@ -105,6 +117,10 @@ export async function checkLimit(limiter: RateLimiter, headers: {get(name: strin
 	try {
 		return await limiter.hit(clientIp(headers), rule);
 	} catch (e) {
+		if (rule.failClosed) {
+			console.error('[ratelimit] falló el almacenamiento, se rechaza el pedido (ruta sensible):', e);
+			return {allowed: false, remaining: 0, retryAfterSec: 30};
+		}
 		console.error('[ratelimit] falló el almacenamiento, se deja pasar el pedido:', e);
 		return {allowed: true, remaining: rule.limit, retryAfterSec: 1};
 	}

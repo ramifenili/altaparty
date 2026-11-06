@@ -45,10 +45,17 @@ export function readCookie(header: string | null, name: string): string | undefi
 	return undefined;
 }
 
-/** Defensa extra contra CSRF: en pedidos que modifican datos, el Origin debe ser el mismo sitio. */
+/**
+ * Defensa extra contra CSRF: en pedidos que modifican datos, el Origin debe ser el mismo sitio.
+ * Sin Origin solo se acepta si el navegador declara `Sec-Fetch-Site: same-origin|none`;
+ * un pedido sin ninguna de las dos cabeceras se rechaza.
+ */
 export function sameOrigin(headers: {get(n: string): string | null}): boolean {
 	const origin = headers.get('origin');
-	if (!origin) return true; // fetch del mismo origen sin Origin (GET) o herramientas locales
+	if (!origin) {
+		const site = headers.get('sec-fetch-site');
+		return site === 'same-origin' || site === 'none';
+	}
 	const host = headers.get('x-forwarded-host') ?? headers.get('host');
 	try {
 		return new URL(origin).host === host;

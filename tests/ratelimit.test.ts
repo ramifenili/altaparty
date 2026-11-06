@@ -40,7 +40,7 @@ test('si el almacenamiento externo falla, se deja pasar (fail-open)', async () =
 	const origError = console.error;
 	console.error = () => {};
 	try {
-		const r = await checkLimit(broken, {get: () => null}, RULES.createPurchase);
+		const r = await checkLimit(broken, {get: () => null}, RULES.config);
 		assert.equal(r.allowed, true);
 	} finally {
 		console.error = origError;
@@ -50,4 +50,16 @@ test('si el almacenamiento externo falla, se deja pasar (fail-open)', async () =
 test('las rutas que crean cobros tienen el límite más bajo', () => {
 	assert.ok(RULES.createPurchase.limit < RULES.purchaseStatus.limit);
 	assert.ok(RULES.authorize.limit <= RULES.createPurchase.limit * 2);
+});
+
+test('rutas sensibles se cierran si falla el almacenamiento; las demás se abren', async () => {
+	const broken = {hit: async () => { throw new Error('caído'); }};
+	const h = {get: () => null};
+	const q = console.error;
+	console.error = () => {};
+	assert.equal((await checkLimit(broken, h, RULES.adminLogin)).allowed, false);
+	assert.equal((await checkLimit(broken, h, RULES.config)).allowed, true);
+	console.error = q;
+	const hh = {get: (k: string) => ({'x-vercel-forwarded-for': '1.2.3.4', 'x-forwarded-for': '6.6.6.6'} as Record<string, string>)[k] ?? null};
+	assert.equal(clientIp(hh, {VERCEL: '1'}), '1.2.3.4');
 });

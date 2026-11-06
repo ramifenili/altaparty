@@ -249,6 +249,13 @@ test('cada compra permite un máximo de generaciones finales (no hay videos infi
 	assert.equal((await svc.authorize('PRUEBA-dinos')).remaining, 1);
 });
 
+test('pedidos simultáneos no superan el máximo de generaciones', async () => {
+	const {svc} = testService(2);
+	const results = await Promise.allSettled(Array.from({length: 8}, () => svc.authorize('PRUEBA-boca')));
+	assert.equal(results.filter((r) => r.status === 'fulfilled').length, 2);
+	assert.equal((await svc.status('PRUEBA-boca')).remaining, 0);
+});
+
 test('la autorización queda atada a la plantilla comprada', async () => {
 	const {svc} = testService();
 	const a = await svc.authorize('PRUEBA-gamer');

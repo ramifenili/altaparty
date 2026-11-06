@@ -3,7 +3,7 @@ import {NextResponse} from 'next/server';
 import {limited, RULES} from '../../../../src/server';
 import {requireAdmin} from '../../../../src/server/admin';
 import {getStore} from '../../../../src/server/store';
-import {sniffMedia, MEDIA_LIMITS} from '../../../../src/server/media-sniff';
+import {sniffMedia, safeFileName, MEDIA_LIMITS} from '../../../../src/server/media-sniff';
 
 export const runtime = 'nodejs';
 
@@ -32,6 +32,6 @@ export async function POST(req: Request) {
 		return NextResponse.json({error: 'too_large', message: `Pesa demasiado (máx. ${Math.round(MEDIA_LIMITS[kind.kind] / 1024 / 1024)} MB para ${kind.kind === 'video' ? 'videos' : kind.kind === 'font' ? 'tipografías' : 'imágenes'}).`}, {status: 413});
 	}
 	const id = randomBytes(10).toString('hex');
-	const meta = await getStore().putMedia({id, kind: kind.kind, mime: kind.mime, bytes: buf.length, name: file.name.slice(0, 80)}, buf);
+	const meta = await getStore().putMedia({id, kind: kind.kind, mime: kind.mime, bytes: buf.length, name: safeFileName(file.name)}, buf);
 	return NextResponse.json(meta, {status: 201});
 }

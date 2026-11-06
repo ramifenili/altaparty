@@ -26,7 +26,17 @@ test('CSRF: el Origin debe coincidir con el host', () => {
 	assert.equal(sameOrigin(h({origin: 'https://sitio.com', host: 'sitio.com'})), true);
 	assert.equal(sameOrigin(h({origin: 'https://evil.com', host: 'sitio.com'})), false);
 	assert.equal(sameOrigin(h({origin: 'https://sitio.com', 'x-forwarded-host': 'sitio.com', host: 'interno:3000'})), true);
-	assert.equal(sameOrigin(h({host: 'sitio.com'})), true);
+	assert.equal(sameOrigin(h({host: 'sitio.com'})), false); // sin Origin ni Sec-Fetch-Site
+	assert.equal(sameOrigin(h({host: 'sitio.com', 'sec-fetch-site': 'same-origin'})), true);
+	assert.equal(sameOrigin(h({host: 'sitio.com', 'sec-fetch-site': 'cross-site'})), false);
+});
+
+test('un "ftyp" sin estructura de MP4 válida se rechaza y los nombres se sanean', async () => {
+	const {sniffMedia, safeFileName} = await import('../src/server/media-sniff.ts');
+	assert.equal(sniffMedia(Buffer.concat([Buffer.from([0xff, 0xff, 0xff, 0xff]), Buffer.from('ftypisom'), Buffer.alloc(32)])), null);
+	assert.equal(safeFileName('../../etc/<img src=x onerror=alert(1)>.mp4'), 'img srcx onerroralert(1).mp4');
+	assert.equal(safeFileName('..\\..\\video final.mp4'), 'video final.mp4');
+	assert.equal(safeFileName('...'), 'archivo');
 });
 
 test('los archivos se reconocen por su contenido real, no por la extensión', () => {

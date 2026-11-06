@@ -5,8 +5,8 @@
   "main": "index.js",
   "scripts": {
     "postinstall": "node scripts/copy-ffmpeg-core.js",
-    "dev": "next dev",
-    "build": "next build",
+    "dev": "next dev --webpack",
+    "build": "next build --webpack",
     "start": "next start",
     "typecheck": "tsc --noEmit",
     "test": "node --no-warnings --test \"tests/*.test.ts\"",
@@ -22,7 +22,7 @@
     "@vercel/blob": "^2.8.2",
     "lucide-react": "^1.67.0",
     "mercadopago": "^3.6.1",
-    "next": "^16.3.4",
+    "next": "^16.4.5",
     "pg": "^8.23.1",
     "react": "^19.2.8",
     "react-dom": "^19.2.8"

@@ -437,17 +437,18 @@ export function createPurchaseService(deps: {
       }
       // la imagen se genera en el momento y no consume las generaciones del video
       if (kind === "video") {
-        if (s.remaining <= 0) {
-          throw new PurchaseError(
-            "Ya usaste todas las creaciones incluidas en esta compra.",
-            "limit_reached",
-            403,
-          );
-        }
-        await deps.store.updatePurchase(
-          s.purchaseId,
-          (r) => void (r.authorizations += 1),
-        );
+        // el tope se comprueba DENTRO de la actualización (bloqueada por registro): así pedidos
+        // simultáneos no pueden pasar todos el control y superar maxRenders
+        await deps.store.updatePurchase(s.purchaseId, (r) => {
+          if (r.authorizations >= r.maxRenders) {
+            throw new PurchaseError(
+              "Ya usaste todas las creaciones incluidas en esta compra.",
+              "limit_reached",
+              403,
+            );
+          }
+          r.authorizations += 1;
+        });
       }
       const expiresAt = now() + AUTH_TTL_MS;
       const token = signToken(

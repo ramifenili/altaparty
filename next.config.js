@@ -9,7 +9,7 @@ const csp = [
 	"default-src 'self'",
 	"script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://www.googletagmanager.com https://www.clarity.ms https://scripts.clarity.ms",
 	"style-src 'self' 'unsafe-inline'",
-	"img-src 'self' data: blob: https:",
+	"img-src 'self' data: blob: https://*.google-analytics.com https://*.googletagmanager.com https://*.clarity.ms https://c.bing.com",
 	"media-src 'self' blob:",
 	"font-src 'self' data:",
 	"connect-src 'self' blob: data: https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com https://*.clarity.ms https://c.bing.com",
@@ -17,6 +17,8 @@ const csp = [
 	"object-src 'none'",
 	"base-uri 'self'",
 	"frame-ancestors 'none'",
+	"form-action 'self'",
+	"upgrade-insecure-requests",
 ].join('; ');
 
 const nextConfig = {
@@ -29,6 +31,8 @@ const nextConfig = {
 					{key: 'X-Content-Type-Options', value: 'nosniff'},
 					{key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin'},
 					{key: 'X-Frame-Options', value: 'DENY'},
+					{key: 'Cross-Origin-Opener-Policy', value: 'same-origin'},
+					...(isProd ? [{key: 'Strict-Transport-Security', value: 'max-age=31536000; includeSubDomains'}] : []),
 					{key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()'},
 					...(isProd ? [{key: 'Content-Security-Policy', value: csp}] : []),
 				],

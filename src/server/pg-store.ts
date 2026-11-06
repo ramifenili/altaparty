@@ -1,5 +1,9 @@
 import {Pool, type PoolClient} from 'pg';
 import {del, get, put} from '@vercel/blob';
+
+// Al conectar el store en Vercel con el prefijo "BLOB_READ_WRITE_TOKEN", la variable queda como BLOB_READ_WRITE_TOKEN_READ_WRITE_TOKEN;
+// se acepta también ese nombre.
+const blobToken = () => process.env.BLOB_READ_WRITE_TOKEN ?? process.env.BLOB_READ_WRITE_TOKEN_READ_WRITE_TOKEN;
 import type {ClaimRecord, MediaMeta, PurchaseRecord} from './db.ts';
 import {normalizeSettings, type SiteSettings} from '../config/site.ts';
 import {SEED_SETTINGS} from '../config/seed-settings.ts';
@@ -259,7 +263,7 @@ export class PgStore {
 
 	// ---- medios ----
 	async putMedia(meta: Omit<MediaMeta, 'createdAt'>, buf: Buffer) {
-		const blob = await put(`media/${meta.id}`, buf, {access: 'private', contentType: meta.mime, addRandomSuffix: false, allowOverwrite: true});
+		const blob = await put(`media/${meta.id}`, buf, {access: 'private', contentType: meta.mime, addRandomSuffix: false, allowOverwrite: true, token: blobToken()});
 		const full: MediaMeta = {...meta, createdAt: Date.now()};
 		await this.query('INSERT INTO media (id, created_at, pathname, meta) VALUES ($1,$2,$3,$4) ON CONFLICT (id) DO UPDATE SET pathname = $3, meta = $4', [
 			full.id,
@@ -283,7 +287,7 @@ export class PgStore {
 	async deleteMedia(id: string) {
 		const r = await this.query<{pathname: string}>('DELETE FROM media WHERE id = $1 RETURNING pathname', [id]);
 		if (!r.rows[0]) return false;
-		await del(r.rows[0].pathname).catch(() => undefined);
+		await del(r.rows[0].pathname, {token: blobToken()}).catch(() => undefined);
 		return true;
 	}
 
@@ -292,7 +296,7 @@ export class PgStore {
 		const r = await this.query<{pathname: string; meta: MediaMeta}>('SELECT pathname, meta FROM media WHERE id = $1', [id]);
 		const row = r.rows[0];
 		if (!row) return null;
-		const blob = await get(row.pathname, {access: 'private', headers: rangeHeader ? {Range: rangeHeader} : undefined});
+		const blob = await get(row.pathname, {access: 'private', token: blobToken(), headers: rangeHeader ? {Range: rangeHeader} : undefined});
 		if (!blob || blob.statusCode !== 200) return null;
 		const headers: Record<string, string> = {...MEDIA_HEADERS, 'Content-Type': row.meta.mime};
 		const contentRange = blob.headers.get('content-range');

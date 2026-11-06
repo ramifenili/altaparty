@@ -1044,6 +1044,7 @@ function poster(ctx: CanvasRenderingContext2D, c: TemplateContent) {
 const mlStyle: MlStyle = {
   background: (ctx) => wall(ctx, 3),
   window: { datos: 520, pasos: 120 },
+  share: { window: 120, centerGroup: true },
   characters: ["woody-parado", "buzz-parado"],
   charScale: [1.2, 1],
   font: gill,

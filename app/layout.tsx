@@ -7,7 +7,29 @@ export const metadata: Metadata = {
     (process.env.APP_URL ?? "http://localhost:3000").replace(/\/$/, ""),
   ),
   alternates: { canonical: "/" },
-  openGraph: { siteName: "AltaParty", locale: "es_AR", type: "website" },
+  openGraph: {
+    siteName: "AltaParty",
+    locale: "es_AR",
+    type: "website",
+    images: [
+      {
+        url: "/og-home.jpg",
+        width: 750,
+        height: 750,
+        type: "image/jpeg",
+        alt: "AltaParty: tu invitación de cumpleaños animada, lista en minutos",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary",
+    images: [
+      {
+        url: "/og-home.jpg",
+        alt: "AltaParty: tu invitación de cumpleaños animada, lista en minutos",
+      },
+    ],
+  },
   title: "AltaParty — invitaciones de cumpleaños animadas",
   description:
     "Creá una invitación de cumpleaños animada en video MP4: elegí una plantilla, cambiá la música, mirá la vista previa y descargá tu video.",

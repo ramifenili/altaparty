@@ -551,3 +551,82 @@ export async function renderMercadoLibre(
     ),
   );
 }
+
+/**
+ * Arte para la imagen de compartir el link (render/og.ts): el fondo de la plantilla y sus personajes principales centrados,
+ * con sus elementos sueltos (si los tiene) por los bordes. Se dibuja en 1200×1200; abajo queda libre `bottom` px para el texto.
+ */
+export function drawShareArt(
+  ctx: CanvasRenderingContext2D,
+  t: TemplateDefinition,
+  bottom: number,
+) {
+  const S = ML_SIZE;
+  const st = t.ml ?? genericStyle(t);
+  drawBackground(
+    ctx,
+    st.share?.window === undefined
+      ? st
+      : { ...st, window: { ...st.window, datos: st.share.window } },
+    "datos",
+  );
+  const decor = images(t, st.decor);
+  if (st.scatter && decor.length) spread(ctx, decor[0], PASOS_SPOTS);
+  else {
+    const spots: [number, number, number, number][] = [
+      [-10, 40, 190, 0.3],
+      [S - 190, 40, 190, -0.3],
+    ];
+    decor.slice(0, 2).forEach((im, i) => {
+      const [x, y, w, rot] = spots[i];
+      const h = (w * im.height) / im.width;
+      ctx.save();
+      ctx.translate(x + w / 2, y + h / 2);
+      ctx.rotate(rot);
+      shadowed(ctx, () => ctx.drawImage(im, -w / 2, -h / 2, w, h));
+      ctx.restore();
+    });
+  }
+  const art = images(t, st.characters);
+  if (!art.length) return;
+  const scales = st.charScale ?? art.map(() => 1);
+  const gap = st.charGap ?? 16;
+  const maxH = S - bottom - 70;
+  const maxW = S - 100;
+  const base = maxH;
+  let hs = art.map((_, i) => base * scales[i]);
+  let ws = art.map((im, i) => (hs[i] / im.height) * im.width);
+  const k = Math.min(
+    1,
+    maxH / Math.max(...hs),
+    (maxW - gap * (art.length - 1)) / ws.reduce((a, b) => a + b, 0),
+  );
+  hs = hs.map((h) => h * k);
+  ws = ws.map((w) => w * k);
+  const total = ws.reduce((a, b) => a + b, 0) + gap * (art.length - 1);
+  let x = (S - total) / 2;
+  // el personaje principal (el más grande) queda justo en el centro; el resto se acomoda a los lados
+  const main = scales.indexOf(Math.max(...scales));
+  if (art.length > 1 && !st.share?.centerGroup) {
+    const before = ws.slice(0, main).reduce((a, b) => a + b + gap, 0);
+    const shifted = S / 2 - ws[main] / 2 - before;
+    x = Math.min(Math.max(shifted, 30), S - 30 - total);
+  }
+  const floor = S - bottom + 10;
+  art
+    .map((im, i) => {
+      const p = { im, i, x, w: ws[i], h: hs[i] };
+      x += ws[i] + gap;
+      return p;
+    })
+    .sort((a, b) => scales[a.i] - scales[b.i])
+    .forEach(({ im, i, x, w, h }) => {
+      shadowed(ctx, () => {
+        if (st.charFlip?.[i]) {
+          ctx.translate(x + w, 0);
+          ctx.scale(-1, 1);
+          ctx.drawImage(im, 0, floor - h, w, h);
+        } else ctx.drawImage(im, x, floor - h, w, h);
+      });
+    });
+}

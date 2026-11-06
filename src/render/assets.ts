@@ -8,6 +8,8 @@ const FONT_FILES: Record<string, string> = {
 	PressStart: 'PressStart2P',
 	Playfair: 'PlayfairDisplay',
 	Montserrat: 'Montserrat',
+	Inter: 'Inter',
+	DynaPuff: 'DynaPuff',
 	Pacifico: 'Pacifico',
 	RedHatDisplay: 'RedHatDisplay',
 	RacingSansOne: 'RacingSansOne',

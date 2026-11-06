@@ -5,6 +5,7 @@ import {InvitationProvider} from '../../../src/state/InvitationProvider';
 import {AppShell} from '../../../src/components/AppShell';
 import {seoForSlug} from '../../../src/server/seo';
 import {SITE_NAME} from '../../../src/lib/seo';
+import {ogImageFor, shareMetadata} from '../../../src/server/og';
 
 // Se calcula en cada pedido: el admin puede cambiar slug, título y descripción en cualquier momento.
 export const dynamic = 'force-dynamic';
@@ -19,8 +20,7 @@ export async function generateMetadata({params}: Props): Promise<Metadata> {
 		title: r.seo.title,
 		description: r.seo.description,
 		alternates: {canonical: r.url},
-		openGraph: {title: r.seo.title, description: r.seo.description, url: r.url, siteName: SITE_NAME, locale: 'es_AR', type: 'website'},
-		twitter: {card: 'summary', title: r.seo.title, description: r.seo.description},
+		...shareMetadata({title: r.seo.title, description: r.seo.description, url: r.url, image: await ogImageFor(r.tpl.id, `Invitación de cumpleaños «${r.tpl.name}»`)}),
 	};
 }
 

@@ -2,7 +2,7 @@
 
 import type {TemplateContent, TemplateDefinition} from '../templates/types';
 import {TemplateCanvas} from './TemplateCanvas';
-import {Clapperboard, Image, ShoppingCart} from 'lucide-react';
+import {Clapperboard, Image, Share2, ShoppingCart} from 'lucide-react';
 
 /** Vista previa de la imagen 1080×1920 (con marca de agua mientras no se compra). */
 export function StillPreview({template, content, watermark = true, scale = 0.6}: {template: TemplateDefinition; content: TemplateContent; watermark?: boolean; scale?: number}) {
@@ -18,8 +18,8 @@ export function StillPreview({template, content, watermark = true, scale = 0.6}:
 	);
 }
 
-/** Pestañas "Video | Imagen" de las vistas previas; con `ml` (solo admin) suma "Mercado Libre". */
-export function PreviewTabs<M extends string>({mode, onChange, ml = false}: {mode: M; onChange: (m: M) => void; ml?: boolean}) {
+/** Pestañas "Video | Imagen" de las vistas previas; con `ml` (solo admin) suma "Mercado Libre" y "Compartir". */
+export function PreviewTabs<M extends string>({mode, onChange, ml = false, og = false}: {mode: M; onChange: (m: M) => void; ml?: boolean; og?: boolean}) {
 	return (
 		<div className="preview-tabs" role="tablist" aria-label="Qué querés ver">
 			<button type="button" role="tab" aria-selected={mode === 'video'} className="preview-tab" onClick={() => onChange('video' as M)}>
@@ -31,6 +31,11 @@ export function PreviewTabs<M extends string>({mode, onChange, ml = false}: {mod
 			{ml && (
 				<button type="button" role="tab" aria-selected={mode === 'ml'} className="preview-tab" onClick={() => onChange('ml' as M)}>
 					<ShoppingCart size={16} aria-hidden="true" /> Mercado Libre
+				</button>
+			)}
+			{og && (
+				<button type="button" role="tab" aria-selected={mode === 'og'} className="preview-tab" onClick={() => onChange('og' as M)}>
+					<Share2 size={16} aria-hidden="true" /> Compartir
 				</button>
 			)}
 		</div>

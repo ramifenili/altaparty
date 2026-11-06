@@ -49,6 +49,8 @@ export type MlStyle = {
 	/** fondo en el lienzo de 720×1280 de la plantilla; la imagen toma una franja de 720×720 que empieza en `window` */
 	background: (ctx: CanvasRenderingContext2D) => void;
 	window: {datos: number; pasos: number};
+	/** imagen de compartir el link: franja del fondo a usar (si la de `datos` incluye el piso) y si se centra el grupo de personajes en lugar del principal */
+	share?: {window?: number; centerGroup?: boolean};
 	/** personajes (de `assets`) de la primera imagen, de izquierda a derecha */
 	characters: string[];
 	/** elementos sueltos (sin personajes) para decorar las imágenes */

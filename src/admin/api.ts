@@ -41,5 +41,12 @@ export const adminApi = {
 		f.append('file', file instanceof File ? file : new File([file], name ?? 'archivo'));
 		return call<MediaMeta>('/api/admin/media', {method: 'POST', body: f});
 	},
+	ogStatus: (templateId: string) => call<{version: string | null; url: string | null}>(`/api/admin/og/${templateId}`),
+	saveOg: (templateId: string, file: Blob, version: string) => {
+		const f = new FormData();
+		f.append('file', new File([file], 'og.jpg', {type: 'image/jpeg'}));
+		f.append('version', version);
+		return call<{version: string; url: string}>(`/api/admin/og/${templateId}`, {method: 'POST', body: f});
+	},
 	deleteMedia: (id: string) => call<{deleted: boolean}>(`/api/admin/media/${id}`, {method: 'DELETE'}),
 };

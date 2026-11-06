@@ -10,7 +10,7 @@ import { loadWatermarkImage } from "../render/watermark";
 import { CompiledMedia } from "../render/mediaAccess";
 import { formatDuration } from "../audio/library";
 import { PreviewTabs, StillPreview } from "./StillPreview";
-import { MlImages, useIsAdmin } from "./AdminMlImages";
+import { MlImages, OgImage, useIsAdmin } from "./AdminMlImages";
 import { Volume2, VolumeX } from "lucide-react";
 
 /** Mismos tiempos que el exportador (afade en render/engine.ts): entrada corta y salida de 1,2 s al final. */
@@ -81,7 +81,7 @@ export function LivePreview({
   }, [pause]);
   const [audioError, setAudioError] = useState(false);
   // además del video, se puede ver la imagen 1080×1920 que sale de la misma plantilla
-  const [mode, setMode] = useState<"video" | "image" | "ml">("video");
+  const [mode, setMode] = useState<"video" | "image" | "ml" | "og">("video");
   const admin = useIsAdmin();
   const hasAudio = resolvedAudio.kind !== "none";
   const url = resolvedAudio.kind === "none" ? null : resolvedAudio.url;
@@ -218,6 +218,7 @@ export function LivePreview({
     <div className="lp">
       <PreviewTabs
         ml={admin && !clean}
+        og={admin && !clean}
         mode={mode}
         onChange={(m) => {
           setMode(m);
@@ -241,6 +242,7 @@ export function LivePreview({
             <StillPreview template={template} content={content} watermark={!clean} />
           )}
           {mode === "ml" && admin && <MlImages />}
+          {mode === "og" && admin && <OgImage />}
           <div className="player" hidden={mode !== "video"}>
             <button
               type="button"
